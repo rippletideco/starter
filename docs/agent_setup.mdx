@@ -1,0 +1,119 @@
+---
+title: Create your Hypergraph
+description: Learn how to set up your Rippletide hypergraph with Q&A, tags, actions, and states
+---
+
+# Create your Hypergraph
+
+## Overview
+
+Rippletide provides a comprehensive set of APIs for managing and interacting with agents, knowledge bases, and
+conversation flows. All the resources that can be created are here to create an agent with less than 1% hallucinations.
+
+## Hypergraph Concepts
+
+For an easier setup in this SDK, we wrapped high level concepts:
+
+- **[Q&A](/api-reference/introduction#tag/QAndA)** : what are the questions and answers the Agent should know to perform the use case?
+- **[Tags](/api-reference/introduction#tag/Tag)** : define the glossary topics and tag your Q&A
+- Possible **[actions](/api-reference/introduction#tag/Action)** for the Agent and requirements
+- Define **[state and transitions](/api-reference/introduction#tag/State-Predicate)**
+
+In the core Rippletide technology data structures may be implemented in a different manner and complemented by a data coherence check. 
+
+That means when a new data is updated within the graph, the implications in other areas will be evaluated to cascade updates.
+
+A build UI and a run UI will soonly be available.
+
+## Example: Order taking Agent
+
+### Q&A
+Q - What products can be ordered?
+A - You can order our last Samsung TV RED43
+
+Q - What is the price?
+A - The Samsung TV RED43 costs $990
+
+Q - How long will it take for my order to be delivered?
+A - You Samsung TV can be delivered the next day
+
+...
+
+**API Reference**: [Q&A Management](/api-reference/introduction#tag/QAndA) - Create, update, and manage your Q&A pairs
+
+### Tags
+
+Glossary:
+	High-tech products
+	Delivery date
+	Pricing
+	Discount
+	Purchase history
+
+Tags:
+	High-tech products : all products in high-tech category
+	Delivery date : the date the customer will receive his product
+	Purchase history : the list of all product bought
+	Discount : all types of discount that can apply on products
+
+
+Tag the Q&A:
+Q- What is the price?
+A - The Samsung TV RED43 costs $990
+Tags: High-tech products, Discount
+
+**API Reference**: [Tag Management](/api-reference/introduction#tag/Tag) - Create and manage tags for organizing your knowledge base
+
+### Possible actions for the Agent and requirements
+
+Answer a question about a product
+	Requirement : get access the the product documentation
+
+Add a product to the cart
+	Requirement : at least one product chosen
+
+Check out
+	Requirement : At least one product in the cart
+	Requirement : The discount has been applied on the price
+
+Open a ticket when the Agent can not answer
+	Requirement : method to contact back the user (email / phone)
+
+Book a meeting with a sales person
+	Requirement : Sales person availability
+
+**API Reference**: [Action Management](/api-reference/introduction#tag/Action) - Define and manage actions your agent can perform
+
+## Define States and Transitions
+
+State : The user described his needs
+	Transitions : recommend a product, describe discount mechanism
+
+State : A product has been chosen
+	Transitions : Ask a delivery date, checking out, add a discount, delete the product
+
+State : The user has asked to change the delivery address
+	Transition : check if order has been already expedited, ask for the new address
+
+
+State : The user described his needs
+	Transitions : recommend a product, described discount mechanism
+
+State : A product has been chosen
+	Transitions : Ask a delivery date, checking out, add a discount, delete the product
+
+	State : A product has been removed from the cart
+	Transition : pick a new product
+
+	State : The user has asked to change the delivery address
+	Transition : check if order has been already expedited, ask for the new address
+
+**API Reference**: [State Predicate Management](/api-reference/introduction#tag/State-Predicate) - Configure state transitions and agent behavior based on available information
+
+## Next Steps
+
+Once you've defined your hypergraph concepts, you can:
+
+1. **Create your Agent**: [Agent Management API](/api-reference/introduction#tag/Agent) - Set up your conversational AI agent
+2. **Start Chatting**: [Chat API](/api-reference/introduction#tag/Chat) - Interact with your agent through the chat interface
+3. **Add Guardrails**: [Guardrails API](/api-reference/introduction#tag/Guardrails) - Ensure your agent operates within safe boundaries

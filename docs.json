@@ -1,0 +1,89 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Rippletide Documentation",
+  "theme": "mint",
+  "logo": {
+    "light": "/img/rippletide_logo_navy_text_bg.svg",
+    "dark": "/img/logo-rippletide 2_contrastlight.svg"
+  },
+  "favicon": "/img/favicon.ico",
+  "colors": {
+    "primary": "#fca5bf",
+    "light": "#fca5bf",
+    "dark": "#15803D"
+  },
+  "anchors": [
+    {
+      "name": "Discord",
+      "icon": "discord",
+      "url": "https://discord.gg/zUPTRH5eFv"
+    }
+  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "docs/welcome",
+              "docs/get_started",
+              "docs/agent_setup"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "docs/agent_chat",
+              "docs/Agent"
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "docs/community"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "openapi": "openapi.json"
+          }
+        ]
+      }
+    ]
+  },
+  "css": [
+    "/css/custom.css"
+  ],
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "discord": "https://discord.gg/zUPTRH5eFv" ,
+      "github": "https://github.com/rippletideco",
+      "linkedin": "https://linkedin.com/company/rippletide"
+    }
+  }
+}
