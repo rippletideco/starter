@@ -2,8 +2,8 @@
 title: Community and Feedback
 description: Join the Rippletide community and share your feedback
 ---
-# Community and Feedback
-## Community & feedback
+
+## Feedback
 We value feedback and feature requests as we continuously improve this ongoing AI technology project. Your input helps shape the future of AI.
 
 ## Discord

@@ -2,7 +2,6 @@
 title: Integrate with Langchain
 description: Learn how to integrate your Rippletide agent with Langchain
 ---
-# Integrate with Langchain
 
 ## Langchain integration
 **This feature is experimental**  
