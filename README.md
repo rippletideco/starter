@@ -40,4 +40,5 @@ See [LICENSE](LICENSE) file for details.
 ---
 
 Built with ❤️ by the Rippletide team
-This documentation is built with [Mintlify](https://mintlify.com/).
+
+This documentation is built with [Mintlify](https://mintlify.com/)
