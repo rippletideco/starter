@@ -57,8 +57,12 @@
             ]
           },
           {
-            "group": "Endpoints",
+            "group": "SDK Endpoints",
             "openapi": "openapi.json"
+          },
+          {
+            "group": "Evaluation API Endpoints",
+            "openapi": "openapi-eval.json"
           }
         ]
       }
