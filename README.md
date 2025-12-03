@@ -1,6 +1,6 @@
-# Rippletide Documentation
+# Rippletide Starter
 
-Welcome to the Rippletide documentation repository! This repository contains the complete documentation for the Rippletide platform, including an hypergraph database system designed for AI Agents.
+Welcome to the Rippletide Starter repository! This repository contains the complete documentation for the Rippletide platform, including an hypergraph database system designed for AI Agents.
 
 ## About Rippletide
 
