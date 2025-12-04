@@ -1,9 +1,11 @@
-# Rippletide Starter
-
-Welcome to the Rippletide Starter repository! This repository contains the complete documentation for the Rippletide platform, including an hypergraph database system designed for AI Agents.
+<div align="center" style="margin-top: 1em; margin-bottom: 3em;">
+  <a href="https://ethereum.org"><img alt="ethereum logo" src="./assets/logo.svg" alt="ethereum.org" width="125"></a>
+  <h1>👋 Welcome to Rippletide!</h1>
+</div>
 
 ## About Rippletide
 
+Welcome to the Rippletide Starter repository! This repository contains the complete documentation for the Rippletide platform, including an hypergraph database system designed for AI Agents.
 Rippletide Hypergraph is a database that encompasses knowledge and decision-making for AI Agents. It provides:
 
 - **Reduced Hallucinations**: Under 1% hallucination rate
