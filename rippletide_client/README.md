@@ -68,10 +68,8 @@ for fact in report['facts']:
 ```python
 from rippletide_sdk import RippletideClient
 
-RIPPLETIDE_API_KEY = ""
-
 # Initialize client (session ID auto-generated)
-client = RippletideClient(RIPPLETIDE_API_KEY)
+client = RippletideClient(api_key="your-api-key")
 
 # 1. Create agent
 agent = client.create_agent(name="Evaluation Agent")
