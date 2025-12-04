@@ -6,7 +6,7 @@
 Welcome to the Rippletide Starter repository! This repository contains the complete documentation for the Rippletide platform, including an hypergraph database system designed for AI Agents.
 Rippletide Hypergraph is a database that encompasses knowledge and decision-making for AI Agents. It provides:
 
-- **Reduced Hallucinations**: Under 1% hallucination rate
+- **Block and Reduce Hallucinations**: Under 1% hallucination rate
 - **Guardrail Compliance**: 100% adherence to defined guardrails
 - **Full Explainability**: Complete transparency in decision-making processes
 
@@ -25,21 +25,16 @@ After creating your account, you can start building, testing, and optimizing you
 
 ## Quick Links
 
-- **Documentation Site**: [View Live Documentation](https://docs.rippletide.com)
-- **Agent SDK**: https://agent.rippletide.com/
+- **Documentation**: [View Live Documentation](https://docs.rippletide.com)
 - **Evaluation Platform**: https://eval.rippletide.com/
 - **Discord Community**: [Join our Discord](https://discord.gg/zUPTRH5eFv)
 - **GitHub**: [@rippletideco](https://github.com/rippletideco)
 - **LinkedIn**: [Rippletide](https://linkedin.com/company/rippletide)
 
-## License
-
-See [LICENSE](LICENSE) file for details.
-
 ## Support
 
 - **Discord**: [Join our community](https://discord.gg/zUPTRH5eFv) for real-time support
-- **Email**: Contact patrick@rippletide.com or yann@rippletide.com
+- **Email**: Contact yann[at]rippletide.com or patrick[at]rippletide.com 
 
 ---
 
