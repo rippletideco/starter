@@ -18,7 +18,7 @@ class RippletideClient:
     """
     
     # Hard-coded production base URL
-    BASE_URL = "http://https://rippletide-backend-staging-gqdsh7h8drgfazdj.westeurope-01.azurewebsites.net
+    BASE_URL = "http://https://rippletide-backend-staging-gqdsh7h8drgfazdj.westeurope-01.azurewebsites.net"
 
     def __init__(
         self,
