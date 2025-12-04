@@ -1,6 +1,6 @@
-# Rippletide SDK
+# Rippletide Client
 
-Python SDK for interacting with the Rippletide evaluation API.
+Python Client for interacting with the Rippletide evaluation API.
 
 ## Installation
 
