@@ -15,10 +15,7 @@ pip install -r requirements.txt
 ```python
 from rippletide_sdk import RippletideClient
 
-# Initialize client (session ID will be auto-generated)
-client = RippletideClient()
-
-# Or with API key for authenticated requests
+# Initialize client with API key for authenticated requests
 client = RippletideClient(api_key="your-api-key")
 ```
 
@@ -71,8 +68,10 @@ for fact in report['facts']:
 ```python
 from rippletide_sdk import RippletideClient
 
+RIPPLETIDE_API_KEY
+
 # Initialize client (session ID auto-generated)
-client = RippletideClient()
+client = RippletideClient(RIPPLETIDE_API_KEY)
 
 # 1. Create agent
 agent = client.create_agent(
