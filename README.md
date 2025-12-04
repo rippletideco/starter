@@ -3,8 +3,6 @@
   <h1>👋 Welcome to Rippletide!</h1>
 </div>
 
-## About Rippletide
-
 Welcome to the Rippletide Starter repository! This repository contains the complete documentation for the Rippletide platform, including an hypergraph database system designed for AI Agents.
 Rippletide Hypergraph is a database that encompasses knowledge and decision-making for AI Agents. It provides:
 
@@ -13,6 +11,8 @@ Rippletide Hypergraph is a database that encompasses knowledge and decision-maki
 - **Full Explainability**: Complete transparency in decision-making processes
 
 The platform uses a neuro-symbolic reasoning engine at its core to make decisions, such as determining the best sequence of actions to achieve objectives or quantitatively evaluating which external tools to use and in what order.
+
+---
 
 ## Rippletide Projects
 
