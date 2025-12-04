@@ -68,17 +68,13 @@ for fact in report['facts']:
 ```python
 from rippletide_sdk import RippletideClient
 
-RIPPLETIDE_API_KEY
+RIPPLETIDE_API_KEY = ""
 
 # Initialize client (session ID auto-generated)
 client = RippletideClient(RIPPLETIDE_API_KEY)
 
 # 1. Create agent
-agent = client.create_agent(
-    name="Evaluation Agent",
-    seed=42,
-    num_nodes=100
-)
+agent = client.create_agent(name="Evaluation Agent")
 agent_id = agent['id']
 
 # 2. Extract questions from PDF
