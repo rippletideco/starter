@@ -18,9 +18,6 @@ from rippletide_sdk import RippletideClient
 # Initialize client (session ID will be auto-generated)
 client = RippletideClient()
 
-# Or provide your own session ID
-client = RippletideClient(session_id="your-session-id")
-
 # Or with API key for authenticated requests
 client = RippletideClient(api_key="your-api-key")
 ```
@@ -28,18 +25,13 @@ client = RippletideClient(api_key="your-api-key")
 ### 1. Create an Agent for Evaluation
 
 ```python
-agent = client.create_agent(
-    name="My Eval Agent",
-    seed=42,
-    num_nodes=100,
-    label="eval"
-)
+agent = client.create_agent(name="My Eval Agent")
 
 agent_id = agent['id']
 print(f"Created agent: {agent_id}")
 ```
 
-### 2. Extract Questions from PDF
+### 2. Extract questions from your knowledge
 
 ```python
 # Upload PDF and extract questions/expected answers
@@ -110,23 +102,3 @@ for prompt in test_prompts:
     print(f"Label: {report['label']}")
 ```
 ```
-
-## API Reference
-
-### RippletideClient
-
-#### `create_agent(name, seed, num_nodes, label='eval', ...)`
-Creates a new agent for evaluation.
-
-#### `extract_questions_from_pdf(agent_id, pdf_path)`
-Uploads a PDF and extracts questions and expected answers.
-
-#### `get_test_prompts(agent_id)`
-Retrieves all test prompts (questions and expected answers) for an agent.
-
-#### `chat(agent_id, message)`
-Sends a message to an agent and gets a response (generated internally).
-
-#### `evaluate(agent_id, question, expected_answer=None)`
-Simple evaluation endpoint that evaluates a question and returns a report with label, justification, and facts.
-
