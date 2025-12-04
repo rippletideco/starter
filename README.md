@@ -14,12 +14,14 @@ The platform uses a neuro-symbolic reasoning engine at its core to make decision
 
 ---
 
-## Rippletide Projects
+## Quick Start
 
-Rippletide offers two main public projects:
+Get started with **[Rippletide Trust Platform](https://eval.rippletide.com/)** in no time!  
 
-1. **[Agent SDK](https://agent.rippletide.com/)** - Create and configure AI agents with the Rippletide SDK
-2. **[Evaluation Platform](https://eval.rippletide.com/)** - Create and evaluate agents on the Rippletide platform
+After creating your account, you can start building, testing, and optimizing your agents in two ways:
+
+- **API Power:** Create an API key and take full control programmatically. Use the [API documentation](https://docs.rippletide.com/api-reference/introduction) or the Python helper to integrate your agents directly into your projects.
+- **Visual Interface:** Prefer clicks over code? Manage, test, and fine-tune your agents right from the platform’s intuitive UI.
 
 ## Quick Links
 
