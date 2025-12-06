@@ -28,7 +28,6 @@ After creating your account, you can start building, testing, and optimizing you
 - **Documentation**: [View Live Documentation](https://docs.rippletide.com)
 - **Evaluation Platform**: https://eval.rippletide.com/
 - **Discord Community**: [Join our Discord](https://discord.gg/zUPTRH5eFv)
-- **GitHub**: [@rippletideco](https://github.com/rippletideco)
 - **LinkedIn**: [Rippletide](https://linkedin.com/company/rippletide)
 
 ## Support
