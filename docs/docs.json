@@ -36,7 +36,8 @@
             "group": "Guides",
             "pages": [
               "docs/agent_chat",
-              "docs/Agent"
+              "docs/Agent",
+              "docs/rippletide_client"
             ]
           },
           {
