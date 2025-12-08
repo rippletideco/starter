@@ -785,424 +785,6 @@
         }
       }
     },
-    "/api/sdk/tag": {
-      "get": {
-        "tags": [
-          "Tag"
-        ],
-        "summary": "Get All Tags",
-        "operationId": "get_all_tags_api_sdk_tag_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Tag"
-        ],
-        "summary": "Create Tag",
-        "operationId": "create_tag_api_sdk_tag_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sdk/tag/{tag_id}": {
-      "get": {
-        "tags": [
-          "Tag"
-        ],
-        "summary": "Get Tag",
-        "operationId": "get_tag_api_sdk_tag__tag_id__get",
-        "parameters": [
-          {
-            "name": "tag_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Tag Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Tag"
-        ],
-        "summary": "Update Tag",
-        "operationId": "update_tag_api_sdk_tag__tag_id__put",
-        "parameters": [
-          {
-            "name": "tag_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Tag Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Tag"
-        ],
-        "summary": "Delete Tag",
-        "description": "Delete a tag within the current workspace",
-        "operationId": "delete_tag_api_sdk_tag__tag_id__delete",
-        "parameters": [
-          {
-            "name": "tag_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Tag Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sdk/q-and-a-tag": {
-      "get": {
-        "tags": [
-          "QAndA Tag"
-        ],
-        "summary": "List all QAndA-tag relationships in the workspace",
-        "description": "Retrieve all QAndA-tag relationships in the current workspace.\n\nArgs:\n    pg_session: Database session dependency\n    request: FastAPI request object for workspace context\n\nReturns:\n    dict: Dictionary containing a list of all QAndA-tag relationships",
-        "operationId": "get_all_q_and_a_tags_api_sdk_q_and_a_tag_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "QAndA Tag"
-        ],
-        "summary": "Create a new QAndA-tag relationship",
-        "operationId": "create_q_and_a_tag_api_sdk_q_and_a_tag_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/QAndATagCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QAndATagResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sdk/q-and-a-tag/q-and-a/{q_and_a_id}": {
-      "get": {
-        "tags": [
-          "QAndA Tag"
-        ],
-        "summary": "List all tags for a specific QAndA",
-        "description": "Retrieve all tags associated with a specific QAndA.\n\nArgs:\n    q_and_a_id: UUID of the QAndA\n    pg_session: Database session dependency\n    request: FastAPI request object for workspace context\n\nReturns:\n    dict: Dictionary containing a list of tags for the specified QAndA\n\nRaises:\n    HTTPException: 404 if the QAndA is not found or not accessible",
-        "operationId": "get_tags_for_q_and_a_api_sdk_q_and_a_tag_q_and_a__q_and_a_id__get",
-        "parameters": [
-          {
-            "name": "q_and_a_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Q And A Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sdk/q-and-a-tag/tag/{tag_id}": {
-      "get": {
-        "tags": [
-          "QAndA Tag"
-        ],
-        "summary": "List all QAndAs for a specific tag",
-        "description": "Retrieve all QAndAs associated with a specific tag.\n\nArgs:\n    tag_id: UUID of the tag\n    pg_session: Database session dependency\n    request: FastAPI request object for workspace context\n\nReturns:\n    dict: Dictionary containing a list of QAndAs for the specified tag\n\nRaises:\n    HTTPException: 404 if the tag is not found or not accessible",
-        "operationId": "get_q_and_a_for_tag_api_sdk_q_and_a_tag_tag__tag_id__get",
-        "parameters": [
-          {
-            "name": "tag_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Tag Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/QAndATagResponse"
-                  },
-                  "title": "Response Get Q And A For Tag Api Sdk Q And A Tag Tag  Tag Id  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sdk/q-and-a-tag/{q_and_a_tag_id}": {
-      "delete": {
-        "tags": [
-          "QAndA Tag"
-        ],
-        "summary": "Delete an QAndA-tag relationship by ID",
-        "operationId": "delete_q_and_a_tag_api_sdk_q_and_a_tag__q_and_a_tag_id__delete",
-        "parameters": [
-          {
-            "name": "q_and_a_tag_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Q And A Tag Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sdk/q-and-a-tag/q-and-a/{q_and_a_id}/tag/{tag_id}": {
-      "delete": {
-        "tags": [
-          "QAndA Tag"
-        ],
-        "summary": "Delete an QAndA-tag relationship by QAndA and tag IDs",
-        "operationId": "delete_q_and_a_tag_by_ids_api_sdk_q_and_a_tag_q_and_a__q_and_a_id__tag__tag_id__delete",
-        "parameters": [
-          {
-            "name": "q_and_a_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Q And A Id"
-            }
-          },
-          {
-            "name": "tag_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Tag Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/sdk/guardrail": {
       "get": {
         "tags": [
@@ -1417,100 +999,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ManyGuardrailsResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sdk/state-predicate/{agent_id}": {
-      "get": {
-        "tags": [
-          "State Predicate"
-        ],
-        "summary": "Get State Predicate",
-        "operationId": "get_state_predicate_api_sdk_state_predicate__agent_id__get",
-        "parameters": [
-          {
-            "name": "agent_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Agent Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatePredicateResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "State Predicate"
-        ],
-        "summary": "Update State Predicate",
-        "operationId": "update_state_predicate_api_sdk_state_predicate__agent_id__put",
-        "parameters": [
-          {
-            "name": "agent_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Agent Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StatePredicateInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatePredicateResponse"
                 }
               }
             }
@@ -1743,71 +1231,10 @@
         }
       }
     },
-    "/openai/deployments/v1/chat/completions": {
-      "post": {
-        "tags": [
-          "Langchain"
-        ],
-        "summary": "[experimental] Integration of Langchain and LangGraph. Enable seamless use of Rippletide instead of a LLM",
-        "operationId": "azure_openai_llm_wrapper_openai_deployments_v1_chat_completions_post",
-        "parameters": [
-          {
-            "name": "x-rippletide-agent-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Rippletide-Agent-Id"
-            }
-          },
-          {
-            "name": "x-rippletide-conversation-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Rippletide-Conversation-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OpenAIInputPayload"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/sdk/tool-calls/agent/{agent_id}/add-guardrail-variable": {
       "post": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Add Guardrail Variable",
         "description": "Add guardrail variable for a specific agent",
@@ -1849,7 +1276,7 @@
     "/api/sdk/tool-calls/agent/{agent_id}/get-guardrail-variable": {
       "post": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Get Guardrail Variable",
         "description": "Get guardrail variable for a specific agent",
@@ -1891,7 +1318,7 @@
     "/api/sdk/tool-calls/agent/{agent_id}/add-format-answer": {
       "post": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Add Format Answer",
         "description": "Add format answer for a specific agent",
@@ -1933,7 +1360,7 @@
     "/api/sdk/tool-calls/agent/{agent_id}/get-format-answer": {
       "post": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Get Format Answer",
         "description": "Get format answer for a specific agent",
@@ -1975,7 +1402,7 @@
     "/api/sdk/tool-calls/agent/{agent_id}": {
       "get": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Get Tool Calls For Agent",
         "description": "Get all tool calls for a specific agent",
@@ -2015,7 +1442,7 @@
       },
       "delete": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Delete all tool calls for an agent",
         "description": "Delete all tool calls for a specific agent",
@@ -2057,7 +1484,7 @@
     "/api/sdk/add-tool-call": {
       "post": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Add Tool Call",
         "operationId": "add_tool_call_api_sdk_add_tool_call_post",
@@ -2110,7 +1537,7 @@
     "/api/sdk/test-tool": {
       "post": {
         "tags": [
-          "tool-call-bindings"
+          "Tool Calls"
         ],
         "summary": "Test Tool",
         "description": "Proxy endpoint to test tool API calls server-side to avoid CORS issues.\n\nExpected request body:\n{\n    \"url\": \"https://api.example.com/endpoint\",\n    \"method\": \"GET\",\n    \"headers\": {\"x-api-key\": \"...\"},\n    \"body\": {\"param\": \"value\"}  # Will be converted to query params for GET\n}",
@@ -3848,28 +3275,12 @@
       "description": "Questions And Answers (QAndAs) are used by your agent to answers user's questions. QAndAs are used as the only source of truth by the agent in order to avoid hallucination. QAndAs can be organized with tags for better categorization and retrieval."
     },
     {
-      "name": "Tag",
-      "description": "Organize your knowledge base content with tags. Tags can be applied to QAndAs to enable more sophisticated content organization and retrieval."
-    },
-    {
       "name": "Guardrails",
       "description": "Define guardrails to ensure your agents operate within predefined boundaries. Guardrails help maintain consistency and safety in agent responses"
     },
     {
-      "name": "State Predicate",
-      "description": "Configure and manage what your agent can do given the information it has so far. State predicates also indicate the agent which information to ask the user"
-    },
-    {
-      "name": "QAndA Tag",
-      "description": "Create and manage relationships between QAndAs and tags."
-    },
-    {
       "name": "Chat",
       "description": "The route your users user to interact with your agents. Send messages to an agent and receive a response based on their configuration and knowledge base"
-    },
-    {
-      "name": "Langchain",
-      "description": "Endpoints that can be used to replace LLM calls in Langchain"
     },
     {
       "name": "Action",
