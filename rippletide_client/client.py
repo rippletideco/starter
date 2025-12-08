@@ -1,6 +1,7 @@
 """
 Rippletide SDK Client for interacting with the Rippletide evaluation API.
 """
+import os
 import uuid
 import random
 import requests
@@ -17,15 +18,18 @@ class RippletideClient:
         api_key: Optional API key for authenticated requests
     """
     
-    # Hard-coded production base URL
-    BASE_URL = "http://https://rippletide-backend-staging-gqdsh7h8drgfazdj.westeurope-01.azurewebsites.net"
+    # Default base URL (override via constructor or RIPPLETIDE_BASE_URL)
+    BASE_URL = "https://rippletide-backend.azurewebsites.net"
 
     def __init__(
         self,
         session_id: Optional[str] = None,
-        api_key: Optional[str] = None
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None
     ):
-        self.base_url = self.BASE_URL.rstrip('/')
+        # Allow overriding base URL for staging/local via argument or env
+        env_base_url = os.getenv("RIPPLETIDE_BASE_URL")
+        self.base_url = (base_url or env_base_url or self.BASE_URL).rstrip('/')
         self.api_key = api_key
         
         # Generate session_id if not provided and no api_key
