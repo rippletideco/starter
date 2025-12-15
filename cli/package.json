@@ -1,6 +1,6 @@
 {
-  "name": "@rippletide/eval-cli",
-  "version": "1.0.0",
+  "name": "rippletide",
+  "version": "1.0.3",
   "description": "Rippletide Evaluation CLI",
   "main": "dist/index.js",
   "bin": {
@@ -16,8 +16,16 @@
     "cli",
     "evaluation"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Rippletide",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rippletideco/starter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rippletideco/starter/issues"
+  },
+  "homepage": "https://github.com/rippletideco/starter#readme",
   "type": "module",
   "dependencies": {
     "axios": "^1.13.2",
