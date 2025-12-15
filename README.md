@@ -27,6 +27,7 @@ After creating your account, you can start building, testing, and optimizing you
 
 - **Documentation**: [View Live Documentation](https://docs.rippletide.com)
 - **Evaluation Platform**: https://eval.rippletide.com/
+- **CLI Tool**: [Rippletide Evaluation CLI](./cli/) - Interactive command-line interface
 - **Discord Community**: [Join our Discord](https://discord.gg/zUPTRH5eFv)
 - **LinkedIn**: [Rippletide](https://linkedin.com/company/rippletide)
 

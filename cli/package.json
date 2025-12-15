@@ -1,0 +1,38 @@
+{
+  "name": "@rippletide/eval-cli",
+  "version": "1.0.0",
+  "description": "Rippletide Evaluation CLI",
+  "main": "dist/index.js",
+  "bin": {
+    "rippletide": "./bin/rippletide"
+  },
+  "scripts": {
+    "build": "tsc",
+    "eval": "tsx src/index.tsx",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "rippletide",
+    "cli",
+    "evaluation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "chalk": "^5.3.0",
+    "ink": "^5.0.1",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-react": "^7.25.9",
+    "@babel/preset-typescript": "^7.26.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
