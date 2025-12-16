@@ -16,12 +16,10 @@ The platform uses a neuro-symbolic reasoning engine at its core to make decision
 
 ## Quick Start
 
-Get started with **[Rippletide Trust Platform](https://eval.rippletide.com/)** in no time!  
-
-After creating your account, you can start building, testing, and optimizing your agents in two ways:
-
-- **API Power:** Create an API key and take full control programmatically. Use the [API documentation](https://docs.rippletide.com/api-reference/introduction) or the Python helper to integrate your agents directly into your projects.
-- **Visual Interface:** Prefer clicks over code? Manage, test, and fine-tune your agents right from the platform’s intuitive UI.
+```
+npm install rippletide -g
+rippletide eval
+```
 
 ## Quick Links
 
