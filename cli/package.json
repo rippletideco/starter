@@ -28,6 +28,7 @@
   "homepage": "https://github.com/rippletideco/starter#readme",
   "type": "module",
   "dependencies": {
+    "@pinecone-database/pinecone": "^4.0.0",
     "axios": "^1.13.2",
     "chalk": "^5.3.0",
     "ink": "^5.0.1",

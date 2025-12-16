@@ -7,16 +7,21 @@ import { Spinner } from './components/Spinner.js';
 import { ProgressBar } from './components/ProgressBar.js';
 import { Summary } from './components/Summary.js';
 import { api } from './api/client.js';
+import { getPineconeQAndA } from './utils/pinecone.js';
 
 type Step = 
   | 'agent-endpoint' 
   | 'checking-knowledge' 
   | 'select-source' 
+  | 'pinecone-url'
+  | 'pinecone-api-key'
+  | 'fetching-pinecone'
   | 'running-evaluation' 
   | 'complete';
 
 const knowledgeSources = [
   { label: 'Local Files (qanda.json)', value: 'files', description: 'Use qanda.json from current directory' },
+  { label: 'Pinecone', value: 'pinecone', description: 'Fetch Q&A from Pinecone database' },
   { label: 'Current Repository', value: 'repo', description: 'Scan current git repository', disabled: true },
   { label: 'Database', value: 'database', description: 'Connect to a database', disabled: true },
   { label: 'API Endpoint', value: 'api', description: 'Fetch from REST API', disabled: true },
@@ -29,6 +34,10 @@ export const App: React.FC = () => {
   const [agentEndpoint, setAgentEndpoint] = useState('');
   const [knowledgeSource, setKnowledgeSource] = useState('');
   const [knowledgeFound, setKnowledgeFound] = useState(false);
+  const [pineconeUrl, setPineconeUrl] = useState('');
+  const [pineconeApiKey, setPineconeApiKey] = useState('');
+  const [pineconeQAndA, setPineconeQAndA] = useState<Array<{question: string, answer: string}>>([]);
+  const [pineconeProgress, setPineconeProgress] = useState('');
   const [evaluationProgress, setEvaluationProgress] = useState(0);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
@@ -49,6 +58,33 @@ export const App: React.FC = () => {
       })();
     }
   }, [step]);
+
+  useEffect(() => {
+    if (step === 'fetching-pinecone') {
+      (async () => {
+        try {
+          const qaPairs = await getPineconeQAndA(
+            pineconeUrl,
+            pineconeApiKey,
+            (message) => setPineconeProgress(message)
+          );
+          setPineconeQAndA(qaPairs);
+          setStep('running-evaluation');
+        } catch (error: any) {
+          console.error('Error fetching Q&A from Pinecone:', error);
+          setEvaluationResult({
+            totalTests: 0,
+            passed: 0,
+            failed: 0,
+            duration: 'Failed',
+            evaluationUrl: 'http://localhost:5173',
+            error: error.message,
+          });
+          setStep('complete');
+        }
+      })();
+    }
+  }, [step, pineconeUrl, pineconeApiKey]);
 
   useEffect(() => {
     if (step === 'running-evaluation') {
@@ -84,6 +120,11 @@ export const App: React.FC = () => {
                 testPrompts = [];
               }
             }
+          } else if (knowledgeSource === 'pinecone' && pineconeQAndA.length > 0) {
+            testPrompts = pineconeQAndA.slice(0, 5).map((item) => ({
+              question: item.question,
+              answer: item.answer
+            }));
           }
           
           const createdPrompts = await api.addTestPrompts(agentId, testPrompts);
@@ -150,7 +191,7 @@ export const App: React.FC = () => {
         }
       })();
     }
-  }, [step, agentEndpoint, knowledgeSource]);
+  }, [step, agentEndpoint, knowledgeSource, pineconeQAndA]);
 
   const handleAgentEndpointSubmit = (value: string) => {
     setAgentEndpoint(value);
@@ -159,7 +200,21 @@ export const App: React.FC = () => {
 
   const handleSourceSelect = (value: string) => {
     setKnowledgeSource(value);
-    setStep('running-evaluation');
+    if (value === 'pinecone') {
+      setStep('pinecone-url');
+    } else {
+      setStep('running-evaluation');
+    }
+  };
+
+  const handlePineconeUrlSubmit = (value: string) => {
+    setPineconeUrl(value);
+    setStep('pinecone-api-key');
+  };
+
+  const handlePineconeApiKeySubmit = (value: string) => {
+    setPineconeApiKey(value);
+    setStep('fetching-pinecone');
   };
 
   return (
@@ -197,6 +252,32 @@ export const App: React.FC = () => {
             options={knowledgeSources}
             onSelect={handleSourceSelect}
           />
+        </Box>
+      )}
+
+      {step === 'pinecone-url' && (
+        <Box flexDirection="column">
+          <TextInput
+            label="Pinecone database URL"
+            placeholder="https://sample-movies-02j22s8.svc.aped-4627-b74a.pinecone.io"
+            onSubmit={handlePineconeUrlSubmit}
+          />
+        </Box>
+      )}
+
+      {step === 'pinecone-api-key' && (
+        <Box flexDirection="column">
+          <TextInput
+            label="Pinecone API key"
+            placeholder="pcsk_..."
+            onSubmit={handlePineconeApiKeySubmit}
+          />
+        </Box>
+      )}
+
+      {step === 'fetching-pinecone' && (
+        <Box flexDirection="column">
+          <Spinner label={pineconeProgress || "Fetching Q&A from Pinecone..."} />
         </Box>
       )}
 
