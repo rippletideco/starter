@@ -3,23 +3,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 
-const BASE_URL = 'http://localhost:3001';
+let BASE_URL = 'http://rippletide-backend.azurewebsites.net';
 
 let API_KEY: string | null = null;
 
-const client = axios.create({
+let client = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-client.interceptors.request.use((config) => {
-  if (API_KEY) {
-    config.headers['x-api-key'] = API_KEY;
-  }
-  return config;
-});
+const setupInterceptor = () => {
+  client.interceptors.request.use((config) => {
+    if (API_KEY) {
+      config.headers['x-api-key'] = API_KEY;
+    }
+    return config;
+  });
+};
+
+setupInterceptor();
 
 export interface EvaluationConfig {
   agentEndpoint: string;
@@ -54,6 +58,18 @@ export interface PromptEvaluationResult {
 }
 
 export const api = {
+  setBaseUrl(url: string) {
+    BASE_URL = url;
+    client = axios.create({
+      baseURL: BASE_URL,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    setupInterceptor();
+    logger.debug('Backend URL set to:', BASE_URL);
+  },
+
   async generateApiKey(name?: string) {
     try {
       const response = await client.post('/api/api-keys/generate-cli', {

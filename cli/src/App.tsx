@@ -29,7 +29,12 @@ const knowledgeSources = [
   { label: 'Skip (No Knowledge)', value: 'skip', description: 'Run tests without knowledge base', disabled: true },
 ];
 
-export const App: React.FC = () => {
+interface AppProps {
+  backendUrl?: string;
+  dashboardUrl?: string;
+}
+
+export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
   const [step, setStep] = useState<Step>('agent-endpoint');
   const [agentEndpoint, setAgentEndpoint] = useState('');
   const [knowledgeSource, setKnowledgeSource] = useState('');
@@ -43,6 +48,12 @@ export const App: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
   const [currentLLMResponse, setCurrentLLMResponse] = useState<string>('');
   const [evaluationLogs, setEvaluationLogs] = useState<Array<{question: string, response: string}>>([]);
+
+  useEffect(() => {
+    if (backendUrl) {
+      api.setBaseUrl(backendUrl);
+    }
+  }, [backendUrl]);
 
   useEffect(() => {
     if (step === 'checking-knowledge') {
@@ -77,7 +88,7 @@ export const App: React.FC = () => {
             passed: 0,
             failed: 0,
             duration: 'Failed',
-            evaluationUrl: 'http://localhost:5173',
+            evaluationUrl: dashboardUrl || 'https://eval.rippletide.com',
             error: error.message,
           });
           setStep('complete');
@@ -172,7 +183,7 @@ export const App: React.FC = () => {
             passed,
             failed,
             duration: durationStr,
-            evaluationUrl: `http://localhost:5173/eval/${agentId}`,
+            evaluationUrl: `${dashboardUrl || 'https://eval.rippletide.com'}/eval/${agentId}`,
             agentId,
           };
           
@@ -185,7 +196,7 @@ export const App: React.FC = () => {
             passed: 0,
             failed: 0,
             duration: 'Failed',
-            evaluationUrl: 'http://localhost:5173',
+            evaluationUrl: dashboardUrl || 'https://eval.rippletide.com',
           });
           setStep('complete');
         }

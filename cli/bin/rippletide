@@ -14,10 +14,16 @@ async function main() {
 Rippletide CLI
 
 Usage:
-  rippletide eval        Run the Rippletide evaluation UI
+  rippletide eval [options]        Run the Rippletide evaluation UI
 
 Options:
-  -h, --help             Show this help message
+  -b, --backend-url <url>     Backend API URL (default: http://rippletide-backend.azurewebsites.net)
+  -d, --dashboard-url <url>   Dashboard URL (default: https://eval.rippletide.com)
+  -h, --help                  Show this help message
+
+Examples:
+  rippletide eval
+  rippletide eval -b http://localhost:3001 -d http://localhost:5173
 `);
     return;
   }

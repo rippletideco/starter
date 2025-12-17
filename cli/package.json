@@ -1,6 +1,6 @@
 {
   "name": "rippletide",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Rippletide Evaluation CLI",
   "main": "dist/index.js",
   "bin": {

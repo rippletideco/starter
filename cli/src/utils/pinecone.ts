@@ -71,7 +71,7 @@ export async function getPineconeQAndA(
       throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
-    const result = await response.json();
+    const result = await response.json() as { fieldName: string };
     const chunkFieldName = result.fieldName;
 
     if (onProgress) onProgress('Fetching all records from Pinecone...');
@@ -83,12 +83,12 @@ export async function getPineconeQAndA(
       let paginationToken: string | null = null;
       
       do {
-        const listResponse = paginationToken 
+        const listResponse: any = paginationToken 
           ? await index.listPaginated({ limit: 100, paginationToken })
           : await index.listPaginated({ limit: 100 });
         
         if (listResponse.vectors) {
-          allIds = allIds.concat(listResponse.vectors.map(v => v.id));
+          allIds = allIds.concat(listResponse.vectors.map((v: any) => v.id));
         }
         
         paginationToken = listResponse.pagination?.next || null;
@@ -172,7 +172,7 @@ export async function getPineconeQAndA(
           throw new Error(`API request failed: ${qaResponse.status} ${qaResponse.statusText} - ${errorText}`);
         }
         
-        const qaResult = await qaResponse.json();
+        const qaResult = await qaResponse.json() as { qaPairs: QAPair[] };
         allQAPairs.push(...qaResult.qaPairs);
       } catch (qaError: any) {
         console.error(`Error processing batch: ${qaError.message}`);
