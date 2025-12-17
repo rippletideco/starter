@@ -13,6 +13,12 @@ export const logger = {
     }
   },
   
+  warn: (...args: any[]) => {
+    if (isDebugMode) {
+      console.warn('[WARN]', ...args);
+    }
+  },
+  
   info: (...args: any[]) => {
     if (isDebugMode) {
       console.log(...args);
