@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsc",
     "eval": "tsx src/index.tsx",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test:postgresql": "tsx src/scripts/test-postgresql.ts"
   },
   "keywords": [
     "rippletide",
@@ -31,8 +32,11 @@
     "@pinecone-database/pinecone": "^4.0.0",
     "axios": "^1.13.2",
     "chalk": "^5.3.0",
+    "drizzle-orm": "^0.38.3",
     "ink": "^5.0.1",
     "ink-text-input": "^6.0.0",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.13.1",
     "react": "^18.3.1"
   },
   "devDependencies": {
@@ -40,6 +44,8 @@
     "@babel/preset-react": "^7.25.9",
     "@babel/preset-typescript": "^7.26.0",
     "@types/node": "^22.10.2",
+    "@types/node-fetch": "^2.6.13",
+    "@types/pg": "^8.16.0",
     "@types/react": "^18.3.18",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

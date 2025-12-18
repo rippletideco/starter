@@ -8,6 +8,7 @@ import { ProgressBar } from './components/ProgressBar.js';
 import { Summary } from './components/Summary.js';
 import { api } from './api/client.js';
 import { getPineconeQAndA } from './utils/pinecone.js';
+import { getPostgreSQLQAndA, parsePostgreSQLConnectionString, type PostgreSQLConfig } from './utils/postgresql.js';
 
 type Step = 
   | 'agent-endpoint' 
@@ -16,14 +17,16 @@ type Step =
   | 'pinecone-url'
   | 'pinecone-api-key'
   | 'fetching-pinecone'
+  | 'postgresql-config'
+  | 'fetching-postgresql'
   | 'running-evaluation' 
   | 'complete';
 
 const knowledgeSources = [
   { label: 'Local Files (qanda.json)', value: 'files', description: 'Use qanda.json from current directory' },
   { label: 'Pinecone', value: 'pinecone', description: 'Fetch Q&A from Pinecone database' },
+  { label: 'PostgreSQL Database', value: 'postgresql', description: 'Connect to PostgreSQL database' },
   { label: 'Current Repository', value: 'repo', description: 'Scan current git repository', disabled: true },
-  { label: 'Database', value: 'database', description: 'Connect to a database', disabled: true },
   { label: 'API Endpoint', value: 'api', description: 'Fetch from REST API', disabled: true },
   { label: 'GitHub Repository', value: 'github', description: 'Import from GitHub repo', disabled: true },
   { label: 'Skip (No Knowledge)', value: 'skip', description: 'Run tests without knowledge base', disabled: true },
@@ -43,6 +46,9 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
   const [pineconeApiKey, setPineconeApiKey] = useState('');
   const [pineconeQAndA, setPineconeQAndA] = useState<Array<{question: string, answer: string}>>([]);
   const [pineconeProgress, setPineconeProgress] = useState('');
+  const [postgresqlConnectionString, setPostgresqlConnectionString] = useState('');
+  const [postgresqlQAndA, setPostgresqlQAndA] = useState<Array<{question: string, answer: string}>>([]);
+  const [postgresqlProgress, setPostgresqlProgress] = useState('');
   const [evaluationProgress, setEvaluationProgress] = useState(0);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
@@ -98,6 +104,51 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
   }, [step, pineconeUrl, pineconeApiKey]);
 
   useEffect(() => {
+    if (step === 'fetching-postgresql') {
+      (async () => {
+        try {
+          let config: PostgreSQLConfig;
+          
+          if (postgresqlConnectionString.startsWith('postgresql://') || postgresqlConnectionString.startsWith('postgres://')) {
+            config = parsePostgreSQLConnectionString(postgresqlConnectionString);
+          } else {
+            const parts = postgresqlConnectionString.split(',');
+            if (parts.length !== 5) {
+              throw new Error('Invalid connection format. Expected: host,port,database,user,password or postgresql://...');
+            }
+            config = {
+              host: parts[0].trim(),
+              port: parseInt(parts[1].trim()),
+              database: parts[2].trim(),
+              user: parts[3].trim(),
+              password: parts[4].trim()
+            };
+          }
+          
+          const qaPairs = await getPostgreSQLQAndA(
+            config,
+            backendUrl || 'http://rippletide-backend.azurewebsites.net',
+            (message) => setPostgresqlProgress(message)
+          );
+          setPostgresqlQAndA(qaPairs);
+          setStep('running-evaluation');
+        } catch (error: any) {
+          console.error('Error fetching Q&A from PostgreSQL:', error);
+          setEvaluationResult({
+            totalTests: 0,
+            passed: 0,
+            failed: 0,
+            duration: 'Failed',
+            evaluationUrl: dashboardUrl || 'https://eval.rippletide.com',
+            error: error.message,
+          });
+          setStep('complete');
+        }
+      })();
+    }
+  }, [step, postgresqlConnectionString, backendUrl]);
+
+  useEffect(() => {
     if (step === 'running-evaluation') {
       (async () => {
         try {
@@ -133,6 +184,11 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
             }
           } else if (knowledgeSource === 'pinecone' && pineconeQAndA.length > 0) {
             testPrompts = pineconeQAndA.slice(0, 5).map((item) => ({
+              question: item.question,
+              answer: item.answer
+            }));
+          } else if (knowledgeSource === 'postgresql' && postgresqlQAndA.length > 0) {
+            testPrompts = postgresqlQAndA.slice(0, 5).map((item) => ({
               question: item.question,
               answer: item.answer
             }));
@@ -202,7 +258,7 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
         }
       })();
     }
-  }, [step, agentEndpoint, knowledgeSource, pineconeQAndA]);
+  }, [step, agentEndpoint, knowledgeSource, pineconeQAndA, postgresqlQAndA]);
 
   const handleAgentEndpointSubmit = (value: string) => {
     setAgentEndpoint(value);
@@ -213,6 +269,8 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
     setKnowledgeSource(value);
     if (value === 'pinecone') {
       setStep('pinecone-url');
+    } else if (value === 'postgresql') {
+      setStep('postgresql-config');
     } else {
       setStep('running-evaluation');
     }
@@ -226,6 +284,11 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
   const handlePineconeApiKeySubmit = (value: string) => {
     setPineconeApiKey(value);
     setStep('fetching-pinecone');
+  };
+
+  const handlePostgresqlConnectionSubmit = (value: string) => {
+    setPostgresqlConnectionString(value);
+    setStep('fetching-postgresql');
   };
 
   return (
@@ -289,6 +352,31 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
       {step === 'fetching-pinecone' && (
         <Box flexDirection="column">
           <Spinner label={pineconeProgress || "Fetching Q&A from Pinecone..."} />
+        </Box>
+      )}
+
+      {step === 'postgresql-config' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">Enter PostgreSQL connection details</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Format 1: postgresql://user:password@host:port/database</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Format 2: host,port,database,user,password</Text>
+          </Box>
+          <TextInput
+            label="PostgreSQL connection"
+            placeholder="postgresql://postgres:password@localhost:5432/mydb"
+            onSubmit={handlePostgresqlConnectionSubmit}
+          />
+        </Box>
+      )}
+
+      {step === 'fetching-postgresql' && (
+        <Box flexDirection="column">
+          <Spinner label={postgresqlProgress || "Analyzing PostgreSQL database..."} />
         </Box>
       )}
 
