@@ -17,7 +17,7 @@ Usage:
   rippletide eval [options]        Run the Rippletide evaluation UI
 
 Options:
-  -b, --backend-url <url>     Backend API URL (default: http://rippletide-backend.azurewebsites.net)
+  -b, --backend-url <url>     Backend API URL (default: https://rippletide-backend.azurewebsites.net)
   -d, --dashboard-url <url>   Dashboard URL (default: https://eval.rippletide.com)
   -h, --help                  Show this help message
 
