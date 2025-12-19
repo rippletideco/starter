@@ -6,7 +6,7 @@ import { App } from './App.js';
 const parseArgs = () => {
   const args = process.argv.slice(2);
   const options = {
-    backendUrl: 'http://rippletide-backend.azurewebsites.net',
+    backendUrl: 'https://rippletide-backend.azurewebsites.net',
     dashboardUrl: 'https://eval.rippletide.com'
   };
 
@@ -25,7 +25,7 @@ Usage:
   rippletide eval [options]
 
 Options:
-  -b, --backend-url <url>     Backend API URL (default: http://rippletide-backend.azurewebsites.net)
+  -b, --backend-url <url>     Backend API URL (default: https://rippletide-backend.azurewebsites.net)
   -d, --dashboard-url <url>   Dashboard URL (default: https://eval.rippletide.com)
   -h, --help                  Show this help message
 

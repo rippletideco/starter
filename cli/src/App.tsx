@@ -127,7 +127,7 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           
           const qaPairs = await getPostgreSQLQAndA(
             config,
-            backendUrl || 'http://rippletide-backend.azurewebsites.net',
+            backendUrl || 'https://rippletide-backend.azurewebsites.net',
             (message) => setPostgresqlProgress(message)
           );
           setPostgresqlQAndA(qaPairs);

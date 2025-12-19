@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 
-let BASE_URL = 'http://rippletide-backend.azurewebsites.net';
+let BASE_URL = 'https://rippletide-backend.azurewebsites.net';
 
 let API_KEY: string | null = null;
 
