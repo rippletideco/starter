@@ -1,89 +1,37 @@
 ---
-title: "Rippletide Documentation"
-description: "Build hallucination-free AI agents with Rippletide"
+title: Welcome
+description: Introduction to Rippletide
 ---
 
-## Welcome to Rippletide
+Rippletide is a hypergraph database that powers AI Agents with deterministic decision-making capabilities.
 
-Rippletide hypergraph is a database encompassing the knowledge and decision making for AI Agents. It reduces hallucinations under 1%, ensures 100% of the guardrails are followed, and provides full explainability.
+### Key Benefits
+- **< 1% hallucinations** - Dramatically reduces AI errors
+- **100% guardrail compliance** - Ensures all safety rules are followed
+- **Full explainability** - Understand every decision your agent makes
+- **Comprehensive evaluation** - Test and validate agent performance
 
-<Card
-  title="Get Started"
-  icon="rocket"
-  href="/docs/get_started"
-  horizontal
->
-  Create your first Rippletide agent in minutes.
-</Card>
+![Rippletide Hypergraph](/img/schema_doc.jpg)
 
-## Quick Links
+### How It Works
 
-<Columns cols={2}>
-  <Card
-    title="Setup Your Agent"
-    icon="gear"
-    href="/docs/agent_setup"
-  >
-    Learn how to create and configure your hypergraph with Q&A, tags, actions, and states.
-  </Card>
-  <Card
-    title="API Reference"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Complete API documentation with examples and endpoints.
-  </Card>
-  <Card
-    title="Langchain Integration"
-    icon="code"
-    href="/docs/agent_chat"
-  >
-    Integrate your Rippletide agent with Langchain and LangGraph.
-  </Card>
-  <Card
-    title="Complete Guide"
-    icon="book"
-    href="/docs/Agent"
-  >
-    Comprehensive development guide with complete code examples.
-  </Card>
-</Columns>
+Unlike traditional LLM-based agents, Rippletide uses a neuro-symbolic reasoning engine for decision-making:
 
-## Key Features
+- **LLMs** are used only for language understanding (parsing queries) and generation (formulating responses)
+- **Decision-making** is handled by our deterministic reasoning engine
+- **Actions** are selected based on quantitative evaluation, not probabilistic generation
 
-<Columns cols={2}>
-  <Card
-    title="Low Hallucinations"
-    icon="shield-check"
-  >
-    Reduce hallucinations to under 1% with our hypergraph-based knowledge system.
-  </Card>
-  <Card
-    title="Guardrails"
-    icon="lock"
-  >
-    Ensure 100% compliance with your defined guardrails and safety constraints.
-  </Card>
-  <Card
-    title="Full Explainability"
-    icon="eye"
-  >
-    Understand exactly how your agent makes decisions with complete traceability.
-  </Card>
-  <Card
-    title="Neuro-Symbolic Reasoning"
-    icon="brain"
-  >
-    Advanced reasoning engine for complex decision-making and action sequencing.
-  </Card>
-</Columns>
+This approach ensures reliable, explainable, and safe AI agent behavior.
 
-## Join Our Community
+## Getting Started
 
-<Card
-  title="Discord Community"
-  icon="discord"
-  href="https://discord.gg/zUPTRH5eFv"
->
-  Chat with developers, get support, and share your feedback.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Evaluate Your Agent" icon="chart-line" href="/docs/evaluation_overview">
+    Test and measure agent performance with our evaluation tools
+  </Card>
+
+  <Card title="Rippletide SDK" icon="rocket" href="/docs/hypergraph_overview">
+    Create and configure your hypergraph-powered AI agent
+  </Card>
+
+</CardGroup>

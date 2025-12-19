@@ -2,6 +2,10 @@
   "$schema": "https://mintlify.com/docs.json",
   "name": "Rippletide Documentation",
   "theme": "mint",
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "/docs/welcome"
+  },
   "logo": {
     "light": "/img/rippletide_logo_navy_text_bg.svg",
     "dark": "/img/logo-rippletide 2_contrastlight.svg"
@@ -10,7 +14,7 @@
   "colors": {
     "primary": "#fca5bf",
     "light": "#fca5bf",
-    "dark": "#15803D"
+    "dark": "#000"
   },
   "anchors": [
     {
@@ -19,6 +23,9 @@
       "url": "https://discord.gg/zUPTRH5eFv"
     }
   ],
+  "primaryTab": {
+    "name": "Documentation"
+  },
   "navigation": {
     "tabs": [
       {
@@ -27,18 +34,26 @@
           {
             "group": "Get Started",
             "pages": [
-              "docs/welcome",
-              "docs/get_started",
-              "docs/agent_setup"
+              "index"
             ]
           },
           {
-            "group": "Guides",
+            "group": "Evaluate your Agent",
+            "expanded": false,
             "pages": [
+              "docs/evaluation_overview",
+              "docs/cli_guide",
+              "docs/rippletide_client"
+            ]
+          },
+          {
+            "group": "SDK",
+            "expanded": false,
+            "pages": [
+              "docs/hypergraph_overview",
+              "docs/agent_setup",
               "docs/agent_chat",
-              "docs/Agent",
-              "docs/rippletide_client",
-              "docs/cli_guide"
+              "docs/Agent"
             ]
           },
           {

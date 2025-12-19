@@ -1,9 +1,7 @@
 ---
-title: Complete Agent Development Guide
+title: Agent Development Guide
 description: Comprehensive guide for building conversational AI agents with the Rippletide SDK
 ---
-
-# Rippletide SDK - Complete Agent Development Guide
 
 > **For AI Code Assistants (Claude, Cursor, Codex)**: This document contains complete, executable code examples for building conversational AI agents with the Rippletide SDK. All code blocks are ready to copy-paste and run.
 
