@@ -1,0 +1,109 @@
+# Rippletide CLI Guide
+
+The Rippletide CLI allows you to quickly evaluate your AI agents from the terminal with automatic hallucination detection.
+
+<div style={{ 
+  width: '100%', 
+  backgroundColor: 'transparent',
+  padding: 0,
+  margin: 0,
+  border: 'none'
+}}>
+  <video
+    controls
+    style={{ 
+      width: '100%',
+      height: 'auto',
+      display: 'block',
+      border: 'none',
+      outline: 'none',
+      backgroundColor: 'transparent',
+      boxShadow: 'none'
+    }}
+    src="/Terminal.mp4"
+    title="Rippletide CLI Demo"
+  />
+</div>
+
+## Installation
+
+```bash
+npm install -g rippletide
+```
+
+## Quick Start
+
+```bash
+rippletide
+```
+
+The CLI will interactively prompt you for:
+1. Your agent's endpoint URL
+2. Knowledge source for test questions
+3. Run evaluation and display results
+
+## Knowledge Sources
+
+### 1. Local Files
+Create a `qanda.json` file in your current directory:
+
+```json
+[
+  {
+    "question": "What is your primary function?",
+    "answer": "I help users with various tasks through conversation."
+  }
+]
+```
+
+### 2. Pinecone Database
+- Database URL: `https://your-index.pinecone.io`
+- API key: `pcsk_...`
+
+### 3. PostgreSQL Database
+```bash
+# Connection string
+postgresql://user:password@host:port/database
+```
+
+## Agent Endpoint Requirements
+
+Your endpoint must accept POST requests and return responses in one of these formats:
+
+```json
+// Direct string
+"Your answer here"
+
+// Or JSON with any of these fields
+{
+  "answer": "...",
+  "response": "...", 
+  "message": "...",
+  "text": "..."
+}
+```
+
+## Results
+
+After evaluation, you'll receive:
+- **Summary**: Total tests, passed/failed count, duration
+- **Dashboard URL**: Link to view detailed results and hallucination analysis
+
+## Troubleshooting
+
+**Permission errors during installation:**
+```bash
+sudo npm install -g rippletide
+```
+
+**Test agent connectivity:**
+```bash
+curl -X POST http://localhost:8000 \
+  -H "Content-Type: application/json" \
+  -d '{"message": "test"}'
+```
+
+## Support
+
+- GitHub: [https://github.com/rippletideco/starter](https://github.com/rippletideco/starter)
+- Discord: [https://discord.gg/zUPTRH5eFv](https://discord.gg/zUPTRH5eFv)

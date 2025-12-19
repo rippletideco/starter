@@ -14,3 +14,84 @@ h3, h4, h5, h6 {
   font-weight: 500 !important;
 }
 
+video {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  opacity: 1 !important;
+  filter: none !important;
+  transition: none !important;
+}
+
+video:hover {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+video::-webkit-media-controls-enclosure {
+  border: none !important;
+}
+
+video::-webkit-media-controls-panel {
+  border: none !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+video::before,
+video::after,
+div:has(video)::before,
+div:has(video)::after {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+div:has(video) {
+  opacity: 1 !important;
+  filter: none !important;
+  transition: none !important;
+}
+
+div:has(video):hover {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+video:focus,
+video:active,
+video:visited,
+video:focus-visible,
+video:focus-within {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+*:has(video),
+*:has(video):hover,
+*:has(video):focus,
+*:has(video):active {
+  opacity: 1 !important;
+  filter: none !important;
+  background-color: transparent !important;
+  transition: none !important;
+}
+
+video + *,
+video ~ * {
+  pointer-events: none !important;
+}
+
+[class*="overlay"]:has(video),
+[class*="overlay"] video {
+  opacity: 1 !important;
+  filter: none !important;
+  background: transparent !important;
+}
+

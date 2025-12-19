@@ -37,7 +37,8 @@
             "pages": [
               "docs/agent_chat",
               "docs/Agent",
-              "docs/rippletide_client"
+              "docs/rippletide_client",
+              "docs/cli_guide"
             ]
           },
           {
