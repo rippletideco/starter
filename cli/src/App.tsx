@@ -44,20 +44,47 @@ const knowledgeSources = [
 interface AppProps {
   backendUrl?: string;
   dashboardUrl?: string;
+  nonInteractive?: boolean;
+  agentEndpoint?: string;
+  knowledgeSource?: string;
+  pineconeUrl?: string;
+  pineconeApiKey?: string;
+  postgresqlConnection?: string;
+  customHeaders?: Record<string, string>;
+  customBodyTemplate?: string;
+  customResponseField?: string;
 }
 
-export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
-  const [step, setStep] = useState<Step>('agent-endpoint');
-  const [agentEndpoint, setAgentEndpoint] = useState('');
+export const App: React.FC<AppProps> = ({ 
+  backendUrl, 
+  dashboardUrl,
+  nonInteractive,
+  agentEndpoint: initialAgentEndpoint,
+  knowledgeSource: initialKnowledgeSource,
+  pineconeUrl: initialPineconeUrl,
+  pineconeApiKey: initialPineconeApiKey,
+  postgresqlConnection: initialPostgresqlConnection,
+  customHeaders,
+  customBodyTemplate,
+  customResponseField
+}) => {
+  const { exit } = useApp();
+  const initialStep = nonInteractive && initialAgentEndpoint ? 'testing-connection' : 'agent-endpoint';
+  const [step, setStep] = useState<Step>(initialStep);
+  const [agentEndpoint, setAgentEndpoint] = useState(initialAgentEndpoint || '');
   const [connectionTestResult, setConnectionTestResult] = useState<any>(null);
-  const [customConfig, setCustomConfig] = useState<CustomEndpointConfig>({});
-  const [knowledgeSource, setKnowledgeSource] = useState('');
+  const [customConfig, setCustomConfig] = useState<CustomEndpointConfig>({
+    headers: customHeaders,
+    bodyTemplate: customBodyTemplate,
+    responseField: customResponseField
+  });
+  const [knowledgeSource, setKnowledgeSource] = useState(initialKnowledgeSource || '');
   const [knowledgeFound, setKnowledgeFound] = useState(false);
-  const [pineconeUrl, setPineconeUrl] = useState('');
-  const [pineconeApiKey, setPineconeApiKey] = useState('');
+  const [pineconeUrl, setPineconeUrl] = useState(initialPineconeUrl || '');
+  const [pineconeApiKey, setPineconeApiKey] = useState(initialPineconeApiKey || '');
   const [pineconeQAndA, setPineconeQAndA] = useState<Array<{question: string, answer: string}>>([]);
   const [pineconeProgress, setPineconeProgress] = useState('');
-  const [postgresqlConnectionString, setPostgresqlConnectionString] = useState('');
+  const [postgresqlConnectionString, setPostgresqlConnectionString] = useState(initialPostgresqlConnection || '');
   const [postgresqlQAndA, setPostgresqlQAndA] = useState<Array<{question: string, answer: string}>>([]);
   const [postgresqlProgress, setPostgresqlProgress] = useState('');
   const [evaluationProgress, setEvaluationProgress] = useState(0);
@@ -73,6 +100,18 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
   }, [backendUrl]);
 
   useEffect(() => {
+    if (step === 'complete' && nonInteractive) {
+      setTimeout(() => {
+        if (evaluationResult && !evaluationResult.error) {
+          exit();
+        } else {
+          process.exit(1);
+        }
+      }, 1000);
+    }
+  }, [step, nonInteractive, evaluationResult, exit]);
+
+  useEffect(() => {
     if (step === 'testing-connection') {
       (async () => {
         try {
@@ -85,9 +124,16 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
               setStep('checking-knowledge');
             }, 1500);
           } else {
-            setTimeout(() => {
-              setStep('connection-failed');
-            }, 2000);
+            if (nonInteractive) {
+              console.error('Connection failed:', result.message);
+              setTimeout(() => {
+                setStep('checking-knowledge');
+              }, 2000);
+            } else {
+              setTimeout(() => {
+                setStep('connection-failed');
+              }, 2000);
+            }
           }
         } catch (error) {
           logger.error('Error testing connection:', error);
@@ -96,9 +142,16 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
             success: false, 
             message 
           });
-          setTimeout(() => {
-            setStep('connection-failed');
-          }, 2000);
+          if (nonInteractive) {
+            console.error('Connection failed:', message);
+            setTimeout(() => {
+              setStep('checking-knowledge');
+            }, 2000);
+          } else {
+            setTimeout(() => {
+              setStep('connection-failed');
+            }, 2000);
+          }
         }
       })();
     }
@@ -114,10 +167,34 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           logger.error('Error checking knowledge:', error);
           setKnowledgeFound(false);
         }
-        setStep('select-source');
+        
+        if (nonInteractive && knowledgeSource) {
+          if (knowledgeSource === 'pinecone') {
+            if (pineconeUrl && pineconeApiKey) {
+              setStep('fetching-pinecone');
+            } else {
+              console.error('Pinecone URL and API key required for Pinecone source');
+              process.exit(1);
+            }
+          } else if (knowledgeSource === 'postgresql') {
+            if (postgresqlConnectionString) {
+              setStep('fetching-postgresql');
+            } else {
+              console.error('PostgreSQL connection string required for PostgreSQL source');
+              process.exit(1);
+            }
+          } else {
+            setStep('running-evaluation');
+          }
+        } else if (nonInteractive && !knowledgeSource) {
+          setKnowledgeSource('files');
+          setStep('running-evaluation');
+        } else {
+          setStep('select-source');
+        }
       })();
     }
-  }, [step]);
+  }, [step, nonInteractive, knowledgeSource, pineconeUrl, pineconeApiKey, postgresqlConnectionString]);
 
   useEffect(() => {
     if (step === 'fetching-pinecone') {

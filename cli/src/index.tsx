@@ -7,10 +7,11 @@ import { ValidationError } from './errors/types.js';
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
-  const options = {
+  const options: any = {
     backendUrl: 'https://rippletide-backend.azurewebsites.net',
     dashboardUrl: 'https://eval.rippletide.com',
-    debug: false
+    debug: false,
+    nonInteractive: false
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -19,6 +20,38 @@ const parseArgs = () => {
       i++;
     } else if ((args[i] === '--dashboard-url' || args[i] === '-d') && args[i + 1]) {
       options.dashboardUrl = args[i + 1];
+      i++;
+    } else if ((args[i] === '--agent' || args[i] === '-a') && args[i + 1]) {
+      options.agentEndpoint = args[i + 1];
+      options.nonInteractive = true;
+      i++;
+    } else if ((args[i] === '--knowledge' || args[i] === '-k') && args[i + 1]) {
+      options.knowledgeSource = args[i + 1];
+      i++;
+    } else if ((args[i] === '--pinecone-url' || args[i] === '-pu') && args[i + 1]) {
+      options.pineconeUrl = args[i + 1];
+      i++;
+    } else if ((args[i] === '--pinecone-key' || args[i] === '-pk') && args[i + 1]) {
+      options.pineconeApiKey = args[i + 1];
+      i++;
+    } else if ((args[i] === '--postgresql' || args[i] === '-pg') && args[i + 1]) {
+      options.postgresqlConnection = args[i + 1];
+      i++;
+    } else if ((args[i] === '--headers' || args[i] === '-H') && args[i + 1]) {
+      if (!options.headers) options.headers = {};
+      const headerPairs = args[i + 1].split(',');
+      headerPairs.forEach(pair => {
+        const [key, ...valueParts] = pair.split(':');
+        if (key && valueParts.length > 0) {
+          options.headers[key.trim()] = valueParts.join(':').trim();
+        }
+      });
+      i++;
+    } else if ((args[i] === '--body' || args[i] === '-B') && args[i + 1]) {
+      options.bodyTemplate = args[i + 1];
+      i++;
+    } else if ((args[i] === '--response-field' || args[i] === '-rf') && args[i + 1]) {
+      options.responseField = args[i + 1];
       i++;
     } else if (args[i] === '--debug') {
       options.debug = true;
@@ -30,15 +63,42 @@ Usage:
   rippletide eval [options]
 
 Options:
+  -a, --agent <url>           Agent endpoint URL (e.g., localhost:8000)
+  -k, --knowledge <source>    Knowledge source: files, pinecone, or postgresql (default: files)
   -b, --backend-url <url>     Backend API URL (default: https://rippletide-backend.azurewebsites.net)
   -d, --dashboard-url <url>   Dashboard URL (default: https://eval.rippletide.com)
-  --debug                      Show detailed error information and stack traces
+  
+  Pinecone options:
+  -pu, --pinecone-url <url>   Pinecone database URL
+  -pk, --pinecone-key <key>   Pinecone API key
+  
+  PostgreSQL options:
+  -pg, --postgresql <conn>    PostgreSQL connection string or comma-separated values
+  
+  Custom endpoint options:
+  -H, --headers <headers>     Custom headers (e.g., "Authorization: Bearer token, X-API-Key: key")
+  -B, --body <template>       Custom body template (use {question} as placeholder)
+  -rf, --response-field <path> Response field path (e.g., "data.response")
+  
+  Other options:
+  --debug                     Show detailed error information
   -h, --help                  Show this help message
 
 Examples:
+  # Interactive mode (default)
   rippletide eval
-  rippletide eval -b http://localhost:3001 -d http://localhost:5173
-  rippletide eval --debug
+  
+  # Direct evaluation with local files
+  rippletide eval -a localhost:8000
+  
+  # Direct evaluation with Pinecone
+  rippletide eval -a localhost:8000 -k pinecone -pu https://db.pinecone.io -pk pcsk_xxxxx
+  
+  # Direct evaluation with PostgreSQL
+  rippletide eval -a localhost:8000 -k postgresql -pg "postgresql://user:pass@localhost:5432/db"
+  
+  # With custom headers and body
+  rippletide eval -a localhost:8000 -H "Authorization: Bearer token" -B '{"prompt": "{question}"}'
 `);
       process.exit(0);
     } else if (!args[i].startsWith('-')) {
@@ -62,7 +122,16 @@ async function run() {
     const { waitUntilExit } = render(
       <App 
         backendUrl={options.backendUrl} 
-        dashboardUrl={options.dashboardUrl} 
+        dashboardUrl={options.dashboardUrl}
+        nonInteractive={options.nonInteractive}
+        agentEndpoint={options.agentEndpoint}
+        knowledgeSource={options.knowledgeSource}
+        pineconeUrl={options.pineconeUrl}
+        pineconeApiKey={options.pineconeApiKey}
+        postgresqlConnection={options.postgresqlConnection}
+        customHeaders={options.headers}
+        customBodyTemplate={options.bodyTemplate}
+        customResponseField={options.responseField}
       />
     );
     
