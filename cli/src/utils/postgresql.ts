@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import pg from 'pg';
+import { DatabaseError } from '../errors/types.js';
 
 const { Client } = pg;
 
@@ -225,7 +226,7 @@ async function generateQAFromReport(report: string, backendUrl: string): Promise
     } catch {
       errorMessage = response.statusText;
     }
-    throw new Error(`API Error (${response.status}): ${errorMessage}`);
+    throw new DatabaseError('postgresql', 'generate Q&A', new Error(`API Error (${response.status}): ${errorMessage}`));
   }
   
   const result = await response.json() as { 
@@ -245,7 +246,7 @@ async function generateQAFromReport(report: string, backendUrl: string): Promise
     }));
   }
   
-  throw new Error('No Q&A pairs in API response');
+  throw new DatabaseError('postgresql', 'parse API response', new Error('No Q&A pairs in API response'));
 }
 
 export async function getPostgreSQLQAndA(
@@ -278,7 +279,10 @@ export async function getPostgreSQLQAndA(
     
     return qaPairs;
   } catch (error: any) {
-    throw new Error(`Error generating Q&A from PostgreSQL: ${error.message}`);
+    if (error instanceof DatabaseError) {
+      throw error;
+    }
+    throw new DatabaseError('postgresql', 'connect and generate Q&A', error);
   } finally {
     await client.end();
   }

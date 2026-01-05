@@ -3,6 +3,15 @@
 const args = process.argv.slice(2);
 const cmd = args[0];
 
+async function loadErrorHandler() {
+  try {
+    const module = await import('../dist/errors/handler.js');
+    return module.ErrorHandler;
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   if (!cmd || cmd === 'eval') {
     await import('../dist/index.js');
@@ -19,11 +28,13 @@ Usage:
 Options:
   -b, --backend-url <url>     Backend API URL (default: https://rippletide-backend.azurewebsites.net)
   -d, --dashboard-url <url>   Dashboard URL (default: https://eval.rippletide.com)
+  --debug                      Show detailed error information and stack traces
   -h, --help                  Show this help message
 
 Examples:
   rippletide eval
   rippletide eval -b http://localhost:3001 -d http://localhost:5173
+  rippletide eval --debug
 `);
     return;
   }
@@ -33,7 +44,26 @@ Examples:
   process.exit(1);
 }
 
-main().catch((err) => {
-  console.error('Error running rippletide:', err?.message || err);
+main().catch(async (err) => {
+  const ErrorHandler = await loadErrorHandler();
+  
+  if (ErrorHandler) {
+    ErrorHandler.handle(err);
+  } else {
+    const isDebug = args.includes('--debug');
+    console.error('\nError: An error occurred while running the CLI');
+    
+    if (err?.message) {
+      console.error(`   ${err.message}`);
+    }
+    
+    if (isDebug && err?.stack) {
+      console.error('\n[DEBUG] Stack trace:');
+      console.error(err.stack);
+    } else if (!isDebug) {
+      console.error('\nRun with --debug flag for more details');
+    }
+  }
+  
   process.exit(1);
 });

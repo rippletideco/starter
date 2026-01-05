@@ -7,6 +7,7 @@ import {
   type CustomEndpointConfig 
 } from './endpoint.js';
 import { extractResponseText, extractCustomResponseField } from './response.js';
+import { transformNetworkError } from '../errors/transform.js';
 
 export async function testAgentConnection(
   endpoint: string
@@ -42,20 +43,16 @@ export async function testAgentConnection(
           }
         }
       } catch (error: any) {
-        if (error.code === 'ECONNREFUSED') {
+        const transformedError = transformNetworkError(error, normalizedEndpoint);
+        
+        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
           return {
             success: false,
-            message: 'Connection refused. Make sure your agent is running.',
+            message: transformedError.userMessage,
             details: { error: error.code }
           };
         }
-        if (error.code === 'ENOTFOUND') {
-          return {
-            success: false,
-            message: 'Endpoint not found. Please check the URL.',
-            details: { error: error.code }
-          };
-        }
+        logger.debug(`Payload variant ${index + 1} failed:`, transformedError.message);
       }
     }
     
@@ -65,9 +62,10 @@ export async function testAgentConnection(
       details: { triedFormats: payloadVariants.length }
     };
   } catch (error: any) {
+    const transformedError = transformNetworkError(error, endpoint);
     return {
       success: false,
-      message: `Connection test failed: ${error.message}`,
+      message: transformedError.userMessage,
       details: { error: error.message }
     };
   }
@@ -130,10 +128,12 @@ export async function testAgentConnectionWithConfig(
       details: { status: response.status, data: response.data }
     };
   } catch (error: any) {
+    const transformedError = transformNetworkError(error, endpoint);
     return {
       success: false,
-      message: `Connection test failed: ${error.message}`,
+      message: transformedError.userMessage,
       details: { error: error.message }
     };
   }
 }
+

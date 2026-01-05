@@ -8,6 +8,7 @@ import {
   type CustomEndpointConfig 
 } from './endpoint.js';
 import { extractResponseText, extractCustomResponseField } from './response.js';
+import { ConnectionError, ErrorCode } from '../errors/types.js';
 
 export async function callLLMEndpoint(
   agentEndpoint: string, 
@@ -42,7 +43,10 @@ export async function callLLMEndpoint(
         : await llmClient.post(normalizedEndpoint, payload);
       
       if (response.status >= 400) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new ConnectionError(ErrorCode.API_ERROR, normalizedEndpoint, {
+          status: response.status,
+          statusText: response.statusText
+        });
       }
     } else {
       const llmClient = axios.create({
@@ -107,13 +111,14 @@ export async function callLLMEndpoint(
     logger.error('Error calling LLM endpoint:', errorDetails);
     
     if (error.code === 'ECONNREFUSED') {
-      throw new Error(`Cannot connect to LLM endpoint at ${agentEndpoint} - Connection refused. Make sure your agent is running.`);
+      throw new ConnectionError(ErrorCode.CONNECTION_REFUSED, agentEndpoint, error);
     } else if (error.code === 'ETIMEDOUT') {
-      throw new Error(`LLM endpoint timeout after 60 seconds`);
+      throw new ConnectionError(ErrorCode.CONNECTION_TIMEOUT, agentEndpoint, error);
     } else if (error.code === 'ENOTFOUND') {
-      throw new Error(`LLM endpoint not found: ${agentEndpoint}. Please check the URL.`);
+      throw new ConnectionError(ErrorCode.CONNECTION_NOT_FOUND, agentEndpoint, error);
     }
     
     throw error;
   }
 }
+

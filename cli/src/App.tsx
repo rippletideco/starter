@@ -9,6 +9,9 @@ import { Summary } from './components/Summary.js';
 import { api, type CustomEndpointConfig } from './api/client.js';
 import { getPineconeQAndA } from './utils/pinecone.js';
 import { getPostgreSQLQAndA, parsePostgreSQLConnectionString, type PostgreSQLConfig } from './utils/postgresql.js';
+import { BaseError, ValidationError } from './errors/types.js';
+import { createErrorComponent } from './errors/handler.js';
+import { logger } from './utils/logger.js';
 
 type Step = 
   | 'agent-endpoint' 
@@ -87,10 +90,11 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
             }, 2000);
           }
         } catch (error) {
-          console.error('Error testing connection:', error);
+          logger.error('Error testing connection:', error);
+          const message = error instanceof BaseError ? error.userMessage : 'Connection test failed';
           setConnectionTestResult({ 
             success: false, 
-            message: 'Connection test failed' 
+            message 
           });
           setTimeout(() => {
             setStep('connection-failed');
@@ -107,7 +111,7 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           const result = await api.checkKnowledge();
           setKnowledgeFound(result.found);
         } catch (error) {
-          console.error('Error checking knowledge:', error);
+          logger.error('Error checking knowledge:', error);
           setKnowledgeFound(false);
         }
         setStep('select-source');
@@ -127,14 +131,15 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           setPineconeQAndA(qaPairs);
           setStep('running-evaluation');
         } catch (error: any) {
-          console.error('Error fetching Q&A from Pinecone:', error);
+          logger.error('Error fetching Q&A from Pinecone:', error);
+          const errorMessage = error instanceof BaseError ? error.userMessage : error.message;
           setEvaluationResult({
             totalTests: 0,
             passed: 0,
             failed: 0,
             duration: 'Failed',
             evaluationUrl: dashboardUrl || 'https://eval.rippletide.com',
-            error: error.message,
+            error: errorMessage,
           });
           setStep('complete');
         }
@@ -153,7 +158,11 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           } else {
             const parts = postgresqlConnectionString.split(',');
             if (parts.length !== 5) {
-              throw new Error('Invalid connection format. Expected: host,port,database,user,password or postgresql://...');
+              throw new ValidationError(
+                'PostgreSQL connection',
+                postgresqlConnectionString,
+                'Expected format: host,port,database,user,password or postgresql://...'
+              );
             }
             config = {
               host: parts[0].trim(),
@@ -172,14 +181,15 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           setPostgresqlQAndA(qaPairs);
           setStep('running-evaluation');
         } catch (error: any) {
-          console.error('Error fetching Q&A from PostgreSQL:', error);
+          logger.error('Error fetching Q&A from PostgreSQL:', error);
+          const errorMessage = error instanceof BaseError ? error.userMessage : error.message;
           setEvaluationResult({
             totalTests: 0,
             passed: 0,
             failed: 0,
             duration: 'Failed',
             evaluationUrl: dashboardUrl || 'https://eval.rippletide.com',
-            error: error.message,
+            error: errorMessage,
           });
           setStep('complete');
         }
@@ -218,6 +228,7 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
                   }));
                 }
               } catch (error) {
+                logger.debug('Error loading prompts from knowledge:', error);
                 testPrompts = [];
               }
             }
@@ -286,13 +297,15 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           setEvaluationResult(result);
           setStep('complete');
         } catch (error) {
-          console.error('Error running evaluation:', error);
+          logger.error('Error running evaluation:', error);
+          const errorMessage = error instanceof BaseError ? error.userMessage : 'Evaluation failed';
           setEvaluationResult({
             totalTests: 0,
             passed: 0,
             failed: 0,
             duration: 'Failed',
             evaluationUrl: dashboardUrl || 'https://eval.rippletide.com',
+            error: errorMessage,
           });
           setStep('complete');
         }
@@ -347,9 +360,9 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
           <Box marginBottom={1}>
             <Text dimColor>Examples:</Text>
             <Box paddingLeft={2} flexDirection="column">
-              <Text dimColor>• localhost:8000</Text>
-              <Text dimColor>• http://localhost:8000</Text>
-              <Text dimColor>• https://my-agent.vercel.app</Text>
+                  <Text dimColor>- localhost:8000</Text>
+                  <Text dimColor>- http://localhost:8000</Text>
+                  <Text dimColor>- https://my-agent.vercel.app</Text>
             </Box>
           </Box>
           <TextInput
@@ -378,7 +391,7 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
       {step === 'connection-failed' && (
         <Box flexDirection="column">
           <Box marginBottom={1}>
-            <Text color="red">❌ Connection failed</Text>
+            <Text color="red">Connection failed</Text>
           </Box>
           <Box marginBottom={1}>
             <Text>{connectionTestResult?.message || 'Could not connect to the agent'}</Text>
@@ -444,13 +457,13 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
             <Box marginTop={1} flexDirection="column">
               <Text color="green">Current configuration:</Text>
               {customConfig.headers && Object.keys(customConfig.headers).length > 0 && (
-                <Text dimColor>• Headers: {Object.keys(customConfig.headers).join(', ')}</Text>
+                <Text dimColor>- Headers: {Object.keys(customConfig.headers).join(', ')}</Text>
               )}
               {customConfig.bodyTemplate && (
-                <Text dimColor>• Custom body template configured</Text>
+                <Text dimColor>- Custom body template configured</Text>
               )}
               {customConfig.responseField && (
-                <Text dimColor>• Response field: {customConfig.responseField}</Text>
+                <Text dimColor>- Response field: {customConfig.responseField}</Text>
               )}
             </Box>
           )}
@@ -466,9 +479,9 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
             <Text dimColor>Format: Header-Name: value (one per line, or comma-separated)</Text>
             <Text dimColor>Examples:</Text>
             <Box paddingLeft={2} flexDirection="column">
-              <Text dimColor>• Authorization: Bearer sk-xxxxx</Text>
-              <Text dimColor>• X-API-Key: your-api-key</Text>
-              <Text dimColor>• Content-Type: application/json</Text>
+              <Text dimColor>- Authorization: Bearer sk-xxxxx</Text>
+              <Text dimColor>- X-API-Key: your-api-key</Text>
+              <Text dimColor>- Content-Type: application/json</Text>
             </Box>
           </Box>
           <TextInput
@@ -499,9 +512,9 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
             <Text dimColor>Use {'{question}'} as placeholder for the user's question</Text>
             <Text dimColor>Examples:</Text>
             <Box paddingLeft={2} flexDirection="column">
-              <Text dimColor>• {'{"prompt": "{question}"}'}</Text>
-              <Text dimColor>• {'{"messages": [{"role": "user", "content": "{question}"}]}'}</Text>
-              <Text dimColor>• {'{"input": {"text": "{question}"}}'}</Text>
+              <Text dimColor>- {'{"prompt": "{question}"}'}</Text>
+              <Text dimColor>- {'{"messages": [{"role": "user", "content": "{question}"}]}'}</Text>
+              <Text dimColor>- {'{"input": {"text": "{question}"}}'}</Text>
             </Box>
           </Box>
           <TextInput
@@ -524,10 +537,10 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
             <Text dimColor>Where to find the answer in the response?</Text>
             <Text dimColor>Examples:</Text>
             <Box paddingLeft={2} flexDirection="column">
-              <Text dimColor>• answer</Text>
-              <Text dimColor>• data.response</Text>
-              <Text dimColor>• choices[0].message.content</Text>
-              <Text dimColor>• result.text</Text>
+              <Text dimColor>- answer</Text>
+              <Text dimColor>- data.response</Text>
+              <Text dimColor>- choices[0].message.content</Text>
+              <Text dimColor>- result.text</Text>
             </Box>
           </Box>
           <TextInput
@@ -668,13 +681,23 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
 
       {step === 'complete' && evaluationResult && (
         <Box flexDirection="column">
-          <Summary
-            totalTests={evaluationResult.totalTests}
-            passed={evaluationResult.passed}
-            failed={evaluationResult.failed}
-            duration={evaluationResult.duration}
-            evaluationUrl={evaluationResult.evaluationUrl}
-          />
+          {evaluationResult.error ? (
+            <Box flexDirection="column">
+              <Text color="red">Error: Evaluation Failed</Text>
+              <Text>{evaluationResult.error}</Text>
+              <Box marginTop={1}>
+                <Text dimColor>Run with --debug flag for more details</Text>
+              </Box>
+            </Box>
+          ) : (
+            <Summary
+              totalTests={evaluationResult.totalTests}
+              passed={evaluationResult.passed}
+              failed={evaluationResult.failed}
+              duration={evaluationResult.duration}
+              evaluationUrl={evaluationResult.evaluationUrl}
+            />
+          )}
         </Box>
       )}
     </Box>

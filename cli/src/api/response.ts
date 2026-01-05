@@ -73,3 +73,4 @@ export function extractResponseText(data: any): string {
   logger.debug('No standard field found, stringifying response');
   return JSON.stringify(data);
 }
+

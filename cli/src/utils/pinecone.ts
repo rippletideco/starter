@@ -1,4 +1,6 @@
 import { Pinecone } from '@pinecone-database/pinecone';
+import { DatabaseError } from '../errors/types.js';
+import { logger } from './logger.js';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
 const MAX_CHUNKS_LIMIT = parseInt(process.env.MAX_CHUNKS_LIMIT || '10', 10);
@@ -16,14 +18,14 @@ export async function getPineconeQAndA(
   try {
     const urlMatch = pineconeUrl.match(/https?:\/\/([^\/]+)/);
     if (!urlMatch) {
-      throw new Error('Invalid Pinecone URL format');
+      throw new DatabaseError('pinecone', 'validate URL', new Error('Invalid Pinecone URL format'));
     }
     
     const hostname = urlMatch[1];
     const indexName = hostname.split('.')[0];
     
     if (!apiKey) {
-      throw new Error('Pinecone API key is required');
+      throw new DatabaseError('pinecone', 'authenticate', new Error('Pinecone API key is required'));
     }
 
     if (onProgress) onProgress('Connecting to Pinecone...');
@@ -45,7 +47,7 @@ export async function getPineconeQAndA(
     });
     
     if (!queryResult.matches || queryResult.matches.length === 0) {
-      throw new Error('No records found in Pinecone index');
+      throw new DatabaseError('pinecone', 'query index', new Error('No records found in Pinecone index'));
     }
 
     const records = queryResult.matches
@@ -53,7 +55,7 @@ export async function getPineconeQAndA(
       .map(match => match.metadata);
     
     if (records.length === 0) {
-      throw new Error('No records with metadata found');
+      throw new DatabaseError('pinecone', 'fetch metadata', new Error('No records with metadata found'));
     }
 
     if (onProgress) onProgress('Identifying chunk field...');
@@ -68,7 +70,7 @@ export async function getPineconeQAndA(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new DatabaseError('pinecone', 'identify chunk field', new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`));
     }
     
     const result = await response.json() as { fieldName: string };
@@ -134,7 +136,7 @@ export async function getPineconeQAndA(
     }
     
     if (chunkFieldValues.length === 0) {
-      throw new Error('No chunks extracted from Pinecone');
+      throw new DatabaseError('pinecone', 'extract chunks', new Error('No chunks extracted from Pinecone'));
     }
 
     const limitedChunks = chunkFieldValues.slice(0, MAX_CHUNKS_LIMIT);
@@ -143,7 +145,7 @@ export async function getPineconeQAndA(
     }
     
     if (limitedChunks.length === 0) {
-      throw new Error('No chunks to process');
+      throw new DatabaseError('pinecone', 'process chunks', new Error('No chunks to process'));
     }
 
     if (onProgress) onProgress(`Generating Q&A pairs from ${limitedChunks.length} chunks...`);
@@ -169,22 +171,25 @@ export async function getPineconeQAndA(
         
         if (!qaResponse.ok) {
           const errorText = await qaResponse.text();
-          throw new Error(`API request failed: ${qaResponse.status} ${qaResponse.statusText} - ${errorText}`);
+          throw new DatabaseError('pinecone', 'generate Q&A', new Error(`API request failed: ${qaResponse.status} ${qaResponse.statusText} - ${errorText}`));
         }
         
         const qaResult = await qaResponse.json() as { qaPairs: QAPair[] };
         allQAPairs.push(...qaResult.qaPairs);
       } catch (qaError: any) {
-        console.error(`Error processing batch: ${qaError.message}`);
+        logger.error(`Error processing batch: ${qaError.message}`);
       }
     }
     
     if (allQAPairs.length === 0) {
-      throw new Error('No Q&A pairs generated from chunks');
+      throw new DatabaseError('pinecone', 'generate Q&A pairs', new Error('No Q&A pairs generated from chunks'));
     }
 
     return allQAPairs;
   } catch (error: any) {
-    throw new Error(`Error fetching Q&A from Pinecone: ${error.message}`);
+    if (error instanceof DatabaseError) {
+      throw error;
+    }
+    throw new DatabaseError('pinecone', 'fetch Q&A', error);
   }
 }
