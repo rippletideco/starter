@@ -57,7 +57,147 @@ export interface PromptEvaluationResult {
   error?: any;
 }
 
+export interface CustomEndpointConfig {
+  headers?: Record<string, string>;
+  bodyTemplate?: string;
+  responseField?: string;
+  method?: string;
+}
+
 export const api = {
+  async testAgentConnection(endpoint: string): Promise<{ success: boolean; message: string; details?: any }> {
+    try {
+      const normalizedEndpoint = this.normalizeEndpoint(endpoint);
+      logger.debug(`Testing connection to: ${normalizedEndpoint}`);
+      
+      const testClient = axios.create({
+        timeout: 10000,
+        validateStatus: () => true
+      });
+      
+      const testQuestion = 'Hello, are you there?';
+      const payloadVariants = this.generatePayloadVariants(testQuestion);
+      
+      for (const [index, payload] of payloadVariants.entries()) {
+        try {
+          logger.debug(`Testing with payload variant ${index + 1}`);
+          const response = await testClient.post(normalizedEndpoint, payload);
+          
+          if (response.status < 400) {
+            const responseText = this.extractResponseText(response.data);
+            if (responseText && responseText !== '{}') {
+              return {
+                success: true,
+                message: 'Connection successful! Agent is responding.',
+                details: {
+                  payloadFormat: index + 1,
+                  sampleResponse: responseText.substring(0, 100)
+                }
+              };
+            }
+          }
+        } catch (error: any) {
+          if (error.code === 'ECONNREFUSED') {
+            return {
+              success: false,
+              message: 'Connection refused. Make sure your agent is running.',
+              details: { error: error.code }
+            };
+          }
+          if (error.code === 'ENOTFOUND') {
+            return {
+              success: false,
+              message: 'Endpoint not found. Please check the URL.',
+              details: { error: error.code }
+            };
+          }
+        }
+      }
+      
+      return {
+        success: false,
+        message: 'Could not establish a valid connection. The endpoint might not be compatible.',
+        details: { triedFormats: payloadVariants.length }
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Connection test failed: ${error.message}`,
+        details: { error: error.message }
+      };
+    }
+  },
+
+  async testAgentConnectionWithConfig(
+    endpoint: string, 
+    config: CustomEndpointConfig
+  ): Promise<{ success: boolean; message: string; details?: any }> {
+    try {
+      const normalizedEndpoint = this.normalizeEndpoint(endpoint);
+      logger.debug(`Testing connection with custom config to: ${normalizedEndpoint}`);
+      logger.debug('Custom config:', config);
+      
+      const testClient = axios.create({
+        timeout: 10000,
+        validateStatus: () => true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...config.headers
+        }
+      });
+      
+      const testQuestion = 'Hello, are you there?';
+      let payload: any;
+      
+      if (config.bodyTemplate) {
+        try {
+          const template = config.bodyTemplate.replace(/{question}/g, testQuestion);
+          payload = JSON.parse(template);
+        } catch (e) {
+          payload = config.bodyTemplate.replace(/{question}/g, testQuestion);
+        }
+      } else {
+        payload = { message: testQuestion };
+      }
+      
+      logger.debug('Testing with custom payload:', payload);
+      
+      const method = config.method?.toLowerCase() || 'post';
+      const response = method === 'get' 
+        ? await testClient.get(normalizedEndpoint)
+        : await testClient.post(normalizedEndpoint, payload);
+      
+      if (response.status < 400) {
+        const responseText = config.responseField 
+          ? this.extractCustomResponseField(response.data, config.responseField)
+          : this.extractResponseText(response.data);
+          
+        if (responseText && responseText !== '{}') {
+          return {
+            success: true,
+            message: 'Connection successful with custom configuration!',
+            details: {
+              customConfig: true,
+              sampleResponse: responseText.substring(0, 100)
+            }
+          };
+        }
+      }
+      
+      return {
+        success: false,
+        message: `Server returned ${response.status}: ${response.statusText}`,
+        details: { status: response.status, data: response.data }
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Connection test failed: ${error.message}`,
+        details: { error: error.message }
+      };
+    }
+  },
+
   setBaseUrl(url: string) {
     BASE_URL = url;
     client = axios.create({
@@ -252,63 +392,91 @@ export const api = {
     }
   },
 
-  async callLLMEndpoint(agentEndpoint: string, question: string): Promise<string> {
+  async callLLMEndpoint(agentEndpoint: string, question: string, customConfig?: CustomEndpointConfig): Promise<string> {
     try {
       logger.debug(`Calling LLM endpoint: ${agentEndpoint}`);
       logger.debug(`Question: ${question}`);
       
-      const llmClient = axios.create({
-        timeout: 60000,
-        validateStatus: () => true
-      });
+      const normalizedEndpoint = this.normalizeEndpoint(agentEndpoint);
+      logger.debug(`Normalized endpoint: ${normalizedEndpoint}`);
       
-      const payload: any = { message: question };
+      let response: any = null;
       
-      if (agentEndpoint.includes('vercel.app') || agentEndpoint.includes('naive-cosmetic')) {
-        logger.debug('Using Vercel app format - message only');
+      if (customConfig && (customConfig.headers || customConfig.bodyTemplate)) {
+        logger.debug('Using custom configuration');
+        
+        const llmClient = axios.create({
+          timeout: 60000,
+          validateStatus: () => true,
+          headers: {
+            'Content-Type': 'application/json',
+            ...customConfig.headers
+          }
+        });
+        
+        let payload: any;
+        if (customConfig.bodyTemplate) {
+          try {
+            const template = customConfig.bodyTemplate.replace(/{question}/g, question);
+            payload = JSON.parse(template);
+          } catch (e) {
+            payload = customConfig.bodyTemplate.replace(/{question}/g, question);
+          }
+        } else {
+          payload = { message: question };
+        }
+        
+        logger.debug('Custom payload:', payload);
+        const method = customConfig.method?.toLowerCase() || 'post';
+        response = method === 'get'
+          ? await llmClient.get(normalizedEndpoint)
+          : await llmClient.post(normalizedEndpoint, payload);
+        
+        if (response.status >= 400) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
       } else {
-        payload.query = question;
-        payload.question = question;
-        payload.prompt = question;
+        const llmClient = axios.create({
+          timeout: 60000,
+          validateStatus: () => true
+        });
+        
+        const payloadVariants = this.generatePayloadVariants(question);
+        let lastError: any = null;
+        
+        for (const [index, payload] of payloadVariants.entries()) {
+          try {
+            logger.debug(`Trying payload variant ${index + 1}/${payloadVariants.length}:`, payload);
+            response = await llmClient.post(normalizedEndpoint, payload);
+            
+            if (response.status < 400) {
+              logger.debug(`Success with payload variant ${index + 1}`);
+              break;
+            }
+            
+            lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+          } catch (error) {
+            lastError = error;
+            logger.debug(`Payload variant ${index + 1} failed:`, error);
+          }
+        }
+        
+        if (!response || response.status >= 400) {
+          if (lastError) {
+            throw lastError;
+          }
+          const errorMsg = `LLM endpoint returned error: HTTP ${response?.status} - ${response?.statusText}`;
+          logger.error(errorMsg);
+          throw new Error(errorMsg);
+        }
       }
-      
-      logger.debug('Request payload:', payload);
-      
-      const response = await llmClient.post(agentEndpoint, payload);
       
       logger.debug(`Response status: ${response.status}`);
       logger.debug('Response headers:', response.headers);
       
-      if (response.status >= 400) {
-        const errorMsg = `LLM endpoint returned error: HTTP ${response.status} - ${response.statusText}`;
-        logger.error(errorMsg);
-        logger.debug('Response data:', response.data);
-        throw new Error(errorMsg);
-      }
-      
-      let llmResponse = '';
-      if (typeof response.data === 'string') {
-        llmResponse = response.data;
-      } else if (response.data.answer) {
-        llmResponse = response.data.answer;
-      } else if (response.data.response) {
-        llmResponse = response.data.response;
-      } else if (response.data.message) {
-        llmResponse = response.data.message;
-      } else if (response.data.text) {
-        llmResponse = response.data.text;
-      } else if (response.data.result) {
-        llmResponse = response.data.result;
-      } else if (response.data.output) {
-        llmResponse = response.data.output;
-      } else if (response.data.content) {
-        llmResponse = response.data.content;
-      } else if (response.data.reply) {
-        llmResponse = response.data.reply;
-      } else {
-        logger.debug('No standard field found, stringifying response');
-        llmResponse = JSON.stringify(response.data);
-      }
+      const llmResponse = customConfig?.responseField 
+        ? this.extractCustomResponseField(response.data, customConfig.responseField)
+        : this.extractResponseText(response.data);
       
       if (!llmResponse || llmResponse === '{}') {
         logger.warn('Empty or invalid response from LLM endpoint');
@@ -330,15 +498,146 @@ export const api = {
       logger.error('Error calling LLM endpoint:', errorDetails);
       
       if (error.code === 'ECONNREFUSED') {
-        throw new Error(`Cannot connect to LLM endpoint at ${agentEndpoint} - Connection refused`);
+        throw new Error(`Cannot connect to LLM endpoint at ${agentEndpoint} - Connection refused. Make sure your agent is running.`);
       } else if (error.code === 'ETIMEDOUT') {
         throw new Error(`LLM endpoint timeout after 60 seconds`);
       } else if (error.code === 'ENOTFOUND') {
-        throw new Error(`LLM endpoint not found: ${agentEndpoint}`);
+        throw new Error(`LLM endpoint not found: ${agentEndpoint}. Please check the URL.`);
       }
       
       throw error;
     }
+  },
+
+  normalizeEndpoint(endpoint: string): string {
+    let normalized = endpoint.trim();
+    
+    if (!normalized.match(/^https?:\/\//)) {
+      const hasPort = normalized.match(/:\d+/);
+      if (hasPort || normalized.includes('localhost') || normalized.match(/^\d+\.\d+\.\d+\.\d+/)) {
+        normalized = `http://${normalized}`;
+      } else {
+        normalized = `https://${normalized}`;
+      }
+    }
+    
+    try {
+      const url = new URL(normalized);
+      if (!url.pathname || url.pathname === '/') {
+        return normalized;
+      }
+      return normalized;
+    } catch (error) {
+      logger.warn(`Could not parse URL: ${normalized}, using as-is`);
+      return normalized;
+    }
+  },
+
+  generatePayloadVariants(question: string): any[] {
+    const variants = [];
+    
+    variants.push({ message: question });
+    
+    variants.push({ inputs: question });
+    
+    variants.push({ 
+      message: question,
+      query: question,
+      question: question,
+      prompt: question
+    });
+    
+    variants.push({ query: question });
+    variants.push({ question: question });
+    variants.push({ prompt: question });
+    variants.push({ input: question });
+    variants.push({ text: question });
+    variants.push({ user_message: question });
+    
+    variants.push({ 
+      messages: [{ role: 'user', content: question }]
+    });
+    
+    variants.push({ data: question });
+    variants.push({ content: question });
+    
+    variants.push(question);
+    
+    return variants;
+  },
+
+  extractCustomResponseField(data: any, fieldPath: string): string {
+    try {
+      const parts = fieldPath.split(/[.\[\]]/).filter(p => p);
+      let current = data;
+      
+      for (const part of parts) {
+        if (current === null || current === undefined) {
+          break;
+        }
+        
+        if (/^\d+$/.test(part)) {
+          current = current[parseInt(part)];
+        } else {
+          current = current[part];
+        }
+      }
+      
+      if (typeof current === 'string') {
+        return current;
+      } else if (current !== null && current !== undefined) {
+        return JSON.stringify(current);
+      }
+    } catch (error) {
+      logger.debug(`Could not extract field ${fieldPath}:`, error);
+    }
+    
+    return this.extractResponseText(data);
+  },
+
+  extractResponseText(data: any): string {
+    if (typeof data === 'string') {
+      return data;
+    }
+    
+    const responseFields = [
+      'answer', 'response', 'message', 'text', 'result', 
+      'output', 'content', 'reply', 'completion', 'data',
+      'bot_message', 'assistant_message', 'ai_response'
+    ];
+    
+    for (const field of responseFields) {
+      if (data[field] && typeof data[field] === 'string') {
+        return data[field];
+      }
+    }
+    
+    if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+      const choice = data.choices[0];
+      if (choice.message?.content) {
+        return choice.message.content;
+      }
+      if (choice.text) {
+        return choice.text;
+      }
+    }
+    
+    if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+      const lastMessage = data.messages[data.messages.length - 1];
+      if (lastMessage.content) {
+        return lastMessage.content;
+      }
+    }
+    
+    if (typeof data === 'object' && Object.keys(data).length === 1) {
+      const singleValue = Object.values(data)[0];
+      if (typeof singleValue === 'string') {
+        return singleValue;
+      }
+    }
+    
+    logger.debug('No standard field found, stringifying response');
+    return JSON.stringify(data);
   },
 
   async runPromptEvaluation(
@@ -347,13 +646,14 @@ export const api = {
     promptText: string, 
     agentEndpoint: string,
     expectedAnswer?: string,
-    onLLMResponse?: (response: string) => void
+    onLLMResponse?: (response: string) => void,
+    customConfig?: CustomEndpointConfig
   ): Promise<PromptEvaluationResult> {
     let llmResponse: string | null = null;
     
     try {
       logger.info(`Calling LLM for question: ${promptText}`);
-      llmResponse = await api.callLLMEndpoint(agentEndpoint, promptText);
+      llmResponse = await api.callLLMEndpoint(agentEndpoint, promptText, customConfig);
       
       if (onLLMResponse) {
         onLLMResponse(llmResponse);
@@ -493,7 +793,8 @@ export const api = {
     agentId: string, 
     prompts: any[], 
     agentEndpoint: string,
-    onProgress?: (current: number, total: number, question?: string, llmResponse?: string) => void
+    onProgress?: (current: number, total: number, question?: string, llmResponse?: string) => void,
+    customConfig?: CustomEndpointConfig
   ) {
     const results: PromptEvaluationResult[] = [];
     try {
@@ -514,7 +815,8 @@ export const api = {
             if (onProgress) {
               onProgress(i + 1, prompts.length, prompt.prompt, llmResponse);
             }
-          }
+          },
+          customConfig
         );
         
         results.push(result);

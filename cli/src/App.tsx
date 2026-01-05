@@ -6,12 +6,18 @@ import { SelectMenu } from './components/SelectMenu.js';
 import { Spinner } from './components/Spinner.js';
 import { ProgressBar } from './components/ProgressBar.js';
 import { Summary } from './components/Summary.js';
-import { api } from './api/client.js';
+import { api, type CustomEndpointConfig } from './api/client.js';
 import { getPineconeQAndA } from './utils/pinecone.js';
 import { getPostgreSQLQAndA, parsePostgreSQLConnectionString, type PostgreSQLConfig } from './utils/postgresql.js';
 
 type Step = 
   | 'agent-endpoint' 
+  | 'testing-connection'
+  | 'connection-failed'
+  | 'custom-config'
+  | 'custom-headers'
+  | 'custom-body'
+  | 'custom-response'
   | 'checking-knowledge' 
   | 'select-source' 
   | 'pinecone-url'
@@ -40,6 +46,8 @@ interface AppProps {
 export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
   const [step, setStep] = useState<Step>('agent-endpoint');
   const [agentEndpoint, setAgentEndpoint] = useState('');
+  const [connectionTestResult, setConnectionTestResult] = useState<any>(null);
+  const [customConfig, setCustomConfig] = useState<CustomEndpointConfig>({});
   const [knowledgeSource, setKnowledgeSource] = useState('');
   const [knowledgeFound, setKnowledgeFound] = useState(false);
   const [pineconeUrl, setPineconeUrl] = useState('');
@@ -60,6 +68,37 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
       api.setBaseUrl(backendUrl);
     }
   }, [backendUrl]);
+
+  useEffect(() => {
+    if (step === 'testing-connection') {
+      (async () => {
+        try {
+          const result = customConfig.headers || customConfig.bodyTemplate 
+            ? await api.testAgentConnectionWithConfig(agentEndpoint, customConfig)
+            : await api.testAgentConnection(agentEndpoint);
+          setConnectionTestResult(result);
+          if (result.success) {
+            setTimeout(() => {
+              setStep('checking-knowledge');
+            }, 1500);
+          } else {
+            setTimeout(() => {
+              setStep('connection-failed');
+            }, 2000);
+          }
+        } catch (error) {
+          console.error('Error testing connection:', error);
+          setConnectionTestResult({ 
+            success: false, 
+            message: 'Connection test failed' 
+          });
+          setTimeout(() => {
+            setStep('connection-failed');
+          }, 2000);
+        }
+      })();
+    }
+  }, [step, agentEndpoint, customConfig]);
 
   useEffect(() => {
     if (step === 'checking-knowledge') {
@@ -213,7 +252,8 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
                 logs.push({ question: question || '', response: llmResponse });
                 setEvaluationLogs([...logs]);
               }
-            }
+            },
+            customConfig
           );
           
           setEvaluationProgress(100);
@@ -261,8 +301,12 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
   }, [step, agentEndpoint, knowledgeSource, pineconeQAndA, postgresqlQAndA]);
 
   const handleAgentEndpointSubmit = (value: string) => {
-    setAgentEndpoint(value);
-    setStep('checking-knowledge');
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+      return;
+    }
+    setAgentEndpoint(trimmedValue);
+    setStep('testing-connection');
   };
 
   const handleSourceSelect = (value: string) => {
@@ -297,10 +341,202 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
 
       {step === 'agent-endpoint' && (
         <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">Enter your agent's endpoint URL</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Examples:</Text>
+            <Box paddingLeft={2} flexDirection="column">
+              <Text dimColor>• localhost:8000</Text>
+              <Text dimColor>• http://localhost:8000</Text>
+              <Text dimColor>• https://my-agent.vercel.app</Text>
+            </Box>
+          </Box>
           <TextInput
             label="Agent endpoint"
-            placeholder="http://localhost:8000"
+            placeholder="localhost:8000"
             onSubmit={handleAgentEndpointSubmit}
+          />
+        </Box>
+      )}
+
+      {step === 'testing-connection' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Spinner label="Testing agent connection..." />
+          </Box>
+          {connectionTestResult && (
+            <Box marginTop={1}>
+              <Text color={connectionTestResult.success ? "green" : "red"}>
+                {connectionTestResult.message}
+              </Text>
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {step === 'connection-failed' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="red">❌ Connection failed</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text>{connectionTestResult?.message || 'Could not connect to the agent'}</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">What would you like to do?</Text>
+          </Box>
+          <SelectMenu
+            title="Options"
+            options={[
+              { label: 'Try again with same endpoint', value: 'retry', description: 'Test connection again' },
+              { label: 'Change endpoint URL', value: 'change', description: 'Enter a different endpoint' },
+              { label: 'Configure custom parameters', value: 'custom', description: 'Add headers, auth, custom body format' },
+              { label: 'Continue anyway', value: 'continue', description: 'Skip connection test (not recommended)' },
+            ]}
+            onSelect={(value) => {
+              if (value === 'retry') {
+                setStep('testing-connection');
+              } else if (value === 'change') {
+                setStep('agent-endpoint');
+              } else if (value === 'custom') {
+                setStep('custom-config');
+              } else if (value === 'continue') {
+                setStep('checking-knowledge');
+              }
+            }}
+          />
+        </Box>
+      )}
+
+      {step === 'custom-config' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">Configure custom endpoint parameters</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Choose what to configure:</Text>
+          </Box>
+          <SelectMenu
+            title="Configuration"
+            options={[
+              { label: 'Add custom headers', value: 'headers', description: 'Authorization, API keys, etc.' },
+              { label: 'Custom request body', value: 'body', description: 'Define exact request structure' },
+              { label: 'Custom response field', value: 'response', description: 'Specify where to find the answer' },
+              { label: 'Test with current config', value: 'test', description: 'Try connection with custom settings' },
+              { label: 'Back', value: 'back', description: 'Return to previous menu' },
+            ]}
+            onSelect={(value) => {
+              if (value === 'headers') {
+                setStep('custom-headers');
+              } else if (value === 'body') {
+                setStep('custom-body');
+              } else if (value === 'response') {
+                setStep('custom-response');
+              } else if (value === 'test') {
+                setStep('testing-connection');
+              } else if (value === 'back') {
+                setStep('connection-failed');
+              }
+            }}
+          />
+          {(customConfig.headers || customConfig.bodyTemplate || customConfig.responseField) && (
+            <Box marginTop={1} flexDirection="column">
+              <Text color="green">Current configuration:</Text>
+              {customConfig.headers && Object.keys(customConfig.headers).length > 0 && (
+                <Text dimColor>• Headers: {Object.keys(customConfig.headers).join(', ')}</Text>
+              )}
+              {customConfig.bodyTemplate && (
+                <Text dimColor>• Custom body template configured</Text>
+              )}
+              {customConfig.responseField && (
+                <Text dimColor>• Response field: {customConfig.responseField}</Text>
+              )}
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {step === 'custom-headers' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">Add custom headers</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Format: Header-Name: value (one per line, or comma-separated)</Text>
+            <Text dimColor>Examples:</Text>
+            <Box paddingLeft={2} flexDirection="column">
+              <Text dimColor>• Authorization: Bearer sk-xxxxx</Text>
+              <Text dimColor>• X-API-Key: your-api-key</Text>
+              <Text dimColor>• Content-Type: application/json</Text>
+            </Box>
+          </Box>
+          <TextInput
+            label="Headers (press Enter when done)"
+            placeholder="Authorization: Bearer token, X-API-Key: key"
+            onSubmit={(value) => {
+              const headers: Record<string, string> = {};
+              const headerPairs = value.split(/[,\n]+/);
+              headerPairs.forEach(pair => {
+                const [key, ...valueParts] = pair.split(':');
+                if (key && valueParts.length > 0) {
+                  headers[key.trim()] = valueParts.join(':').trim();
+                }
+              });
+              setCustomConfig(prev => ({ ...prev, headers }));
+              setStep('custom-config');
+            }}
+          />
+        </Box>
+      )}
+
+      {step === 'custom-body' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">Define custom request body</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Use {'{question}'} as placeholder for the user's question</Text>
+            <Text dimColor>Examples:</Text>
+            <Box paddingLeft={2} flexDirection="column">
+              <Text dimColor>• {'{"prompt": "{question}"}'}</Text>
+              <Text dimColor>• {'{"messages": [{"role": "user", "content": "{question}"}]}'}</Text>
+              <Text dimColor>• {'{"input": {"text": "{question}"}}'}</Text>
+            </Box>
+          </Box>
+          <TextInput
+            label="Body template (JSON format)"
+            placeholder='{"prompt": "{question}"}'
+            onSubmit={(value) => {
+              setCustomConfig(prev => ({ ...prev, bodyTemplate: value }));
+              setStep('custom-config');
+            }}
+          />
+        </Box>
+      )}
+
+      {step === 'custom-response' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">Specify response field</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Where to find the answer in the response?</Text>
+            <Text dimColor>Examples:</Text>
+            <Box paddingLeft={2} flexDirection="column">
+              <Text dimColor>• answer</Text>
+              <Text dimColor>• data.response</Text>
+              <Text dimColor>• choices[0].message.content</Text>
+              <Text dimColor>• result.text</Text>
+            </Box>
+          </Box>
+          <TextInput
+            label="Response field path"
+            placeholder="answer"
+            onSubmit={(value) => {
+              setCustomConfig(prev => ({ ...prev, responseField: value }));
+              setStep('custom-config');
+            }}
           />
         </Box>
       )}
@@ -391,7 +627,7 @@ export const App: React.FC<AppProps> = ({ backendUrl, dashboardUrl }) => {
               <Box width={12}>
                 <Text dimColor>Endpoint:</Text>
               </Box>
-              <Text>{agentEndpoint || 'http://localhost:8000'}</Text>
+              <Text>{agentEndpoint}</Text>
             </Box>
             
             <Box>
