@@ -4,9 +4,32 @@ import { render } from 'ink';
 import { App } from './App.js';
 import { ErrorHandler } from './errors/handler.js';
 import { ValidationError } from './errors/types.js';
+import { listTemplates, loadTemplate, getTemplateOptions } from './utils/templates.js';
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
+  
+  if (args[0] === 'list-templates' || args[0] === 'templates') {
+    const templates = listTemplates();
+    console.log('\nAvailable Templates:\n');
+    if (templates.length === 0) {
+      console.log('No templates found in ./templates directory');
+    } else {
+      templates.forEach(template => {
+        console.log(`  ${template.name}`);
+        if (template.config.description) {
+          console.log(`    ${template.config.description}`);
+        }
+        console.log(`    Endpoint: ${template.config.endpoint_url}`);
+        if (template.config.type) {
+          console.log(`    Type: ${template.config.type}`);
+        }
+        console.log();
+      });
+    }
+    process.exit(0);
+  }
+  
   const options: any = {
     backendUrl: 'https://rippletide-backend.azurewebsites.net',
     dashboardUrl: 'https://eval.rippletide.com',
@@ -15,7 +38,19 @@ const parseArgs = () => {
   };
 
   for (let i = 0; i < args.length; i++) {
-    if ((args[i] === '--backend-url' || args[i] === '-b') && args[i + 1]) {
+    if ((args[i] === '--template' || args[i] === '-t') && args[i + 1]) {
+      const template = loadTemplate(args[i + 1]);
+      if (!template) {
+        console.error(`Template '${args[i + 1]}' not found.`);
+        console.log('\nAvailable templates:');
+        const templates = listTemplates();
+        templates.forEach(t => console.log(`  - ${t.name}`));
+        process.exit(1);
+      }
+      const templateOptions = getTemplateOptions(template);
+      Object.assign(options, templateOptions);
+      i++;
+    } else if ((args[i] === '--backend-url' || args[i] === '-b') && args[i + 1]) {
       options.backendUrl = args[i + 1];
       i++;
     } else if ((args[i] === '--dashboard-url' || args[i] === '-d') && args[i + 1]) {
@@ -61,8 +96,15 @@ Rippletide CLI
 
 Usage:
   rippletide eval [options]
+  rippletide list-templates
+  rippletide templates
+
+Commands:
+  eval                        Run evaluation (default)
+  list-templates, templates   List available templates
 
 Options:
+  -t, --template <name>       Use a pre-configured template
   -a, --agent <url>           Agent endpoint URL (e.g., localhost:8000)
   -k, --knowledge <source>    Knowledge source: files, pinecone, or postgresql (default: files)
   -b, --backend-url <url>     Backend API URL (default: https://rippletide-backend.azurewebsites.net)
@@ -87,6 +129,12 @@ Options:
 Examples:
   # Interactive mode (default)
   rippletide eval
+  
+  # List available templates
+  rippletide list-templates
+  
+  # Run with a template
+  rippletide eval -t customer_service
   
   # Direct evaluation with local files
   rippletide eval -a localhost:8000
@@ -132,6 +180,7 @@ async function run() {
         customHeaders={options.headers}
         customBodyTemplate={options.bodyTemplate}
         customResponseField={options.responseField}
+        templatePath={options.templatePath}
       />
     );
     

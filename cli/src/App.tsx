@@ -53,6 +53,7 @@ interface AppProps {
   customHeaders?: Record<string, string>;
   customBodyTemplate?: string;
   customResponseField?: string;
+  templatePath?: string;
 }
 
 export const App: React.FC<AppProps> = ({ 
@@ -66,7 +67,8 @@ export const App: React.FC<AppProps> = ({
   postgresqlConnection: initialPostgresqlConnection,
   customHeaders,
   customBodyTemplate,
-  customResponseField
+  customResponseField,
+  templatePath
 }) => {
   const { exit } = useApp();
   const initialStep = nonInteractive && initialAgentEndpoint ? 'testing-connection' : 'agent-endpoint';
@@ -293,20 +295,42 @@ export const App: React.FC<AppProps> = ({
           setEvaluationProgress(40);
           let testPrompts: Array<{question: string, answer?: string}> | string[] = [];
           if (knowledgeSource === 'files') {
-            const knowledgeResult = await api.checkKnowledge();
-            if (knowledgeResult.found && knowledgeResult.path) {
+            if (templatePath) {
               try {
                 const fs = await import('fs');
-                const knowledgeData = JSON.parse(fs.readFileSync(knowledgeResult.path, 'utf-8'));
-                if (Array.isArray(knowledgeData)) {
-                  testPrompts = knowledgeData.slice(0, 5).map((item: any) => ({
-                    question: item.question || item.prompt || item.input || 'Test question',
-                    answer: item.answer || item.response || item.expectedAnswer
-                  }));
+                const path = await import('path');
+                const qandaPath = path.join(templatePath, 'qanda.json');
+                if (fs.existsSync(qandaPath)) {
+                  const knowledgeData = JSON.parse(fs.readFileSync(qandaPath, 'utf-8'));
+                  if (Array.isArray(knowledgeData)) {
+                    testPrompts = knowledgeData.map((item: any) => ({
+                      question: item.question || item.prompt || item.input || 'Test question',
+                      answer: item.answer || item.response || item.expectedAnswer
+                    }));
+                  }
+                } else {
+                  logger.debug('No qanda.json found in template directory:', templatePath);
                 }
               } catch (error) {
-                logger.debug('Error loading prompts from knowledge:', error);
+                logger.debug('Error loading prompts from template:', error);
                 testPrompts = [];
+              }
+            } else {
+              const knowledgeResult = await api.checkKnowledge();
+              if (knowledgeResult.found && knowledgeResult.path) {
+                try {
+                  const fs = await import('fs');
+                  const knowledgeData = JSON.parse(fs.readFileSync(knowledgeResult.path, 'utf-8'));
+                  if (Array.isArray(knowledgeData)) {
+                    testPrompts = knowledgeData.slice(0, 5).map((item: any) => ({
+                      question: item.question || item.prompt || item.input || 'Test question',
+                      answer: item.answer || item.response || item.expectedAnswer
+                    }));
+                  }
+                } catch (error) {
+                  logger.debug('Error loading prompts from knowledge:', error);
+                  testPrompts = [];
+                }
               }
             }
           } else if (knowledgeSource === 'pinecone' && pineconeQAndA.length > 0) {
