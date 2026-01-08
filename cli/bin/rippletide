@@ -14,6 +14,13 @@ async function loadErrorHandler() {
 
 async function main() {
   if (!cmd || cmd === 'eval') {
+    process.argv = ['node', 'dist/index.js', ...args.slice(cmd === 'eval' ? 1 : 0)];
+    await import('../dist/index.js');
+    return;
+  }
+
+  if (cmd === 'list-templates' || cmd === 'templates') {
+    process.argv = ['node', 'dist/index.js', ...args];
     await import('../dist/index.js');
     return;
   }
