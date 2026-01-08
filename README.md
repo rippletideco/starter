@@ -5,6 +5,8 @@
   Interactive terminal interface, template support, and comprehensive testing reports.
 </p>
 
+
+
 <p align="center">
   <a href="https://eval.rippletide.com">Web Platform</a>
   ·
@@ -35,6 +37,14 @@ Rippletide CLI is an interactive terminal tool that lets you evaluate AI agent e
 Instead of manually testing API endpoints or writing custom test scripts, Rippletide CLI provides a beautiful terminal UI with real-time progress tracking, automatic evaluation, and detailed reports.
 
 The result is a streamlined testing workflow that helps you validate AI agent quality before deployment.
+
+<p align="center">
+  <a href="https://github.com/rippletideco/starter">
+    <picture>
+      <img src="https://raw.githubusercontent.com/rippletideco/starter/main/assets/demo.gif" alt="Rippletide Preview" width="800">
+    </picture>
+  </a>
+</p>
 
 ---
 
