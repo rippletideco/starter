@@ -28,11 +28,14 @@ type Step =
   | 'fetching-pinecone'
   | 'postgresql-config'
   | 'fetching-postgresql'
+  | 'pdf-path-input'
+  | 'uploading-pdf'
   | 'running-evaluation' 
   | 'complete';
 
 const knowledgeSources = [
   { label: 'Local Files (qanda.json)', value: 'files', description: 'Use qanda.json from current directory' },
+  { label: 'PDF Document', value: 'pdf', description: 'Upload and extract knowledge from a PDF file' },
   { label: 'Pinecone', value: 'pinecone', description: 'Fetch Q&A from Pinecone database' },
   { label: 'PostgreSQL Database', value: 'postgresql', description: 'Connect to PostgreSQL database' },
   { label: 'Current Repository', value: 'repo', description: 'Scan current git repository', disabled: true },
@@ -50,6 +53,7 @@ interface AppProps {
   pineconeUrl?: string;
   pineconeApiKey?: string;
   postgresqlConnection?: string;
+  pdfPath?: string;
   customHeaders?: Record<string, string>;
   customBodyTemplate?: string;
   customResponseField?: string;
@@ -65,6 +69,7 @@ export const App: React.FC<AppProps> = ({
   pineconeUrl: initialPineconeUrl,
   pineconeApiKey: initialPineconeApiKey,
   postgresqlConnection: initialPostgresqlConnection,
+  pdfPath: initialPdfPath,
   customHeaders,
   customBodyTemplate,
   customResponseField,
@@ -89,6 +94,10 @@ export const App: React.FC<AppProps> = ({
   const [postgresqlConnectionString, setPostgresqlConnectionString] = useState(initialPostgresqlConnection || '');
   const [postgresqlQAndA, setPostgresqlQAndA] = useState<Array<{question: string, answer: string}>>([]);
   const [postgresqlProgress, setPostgresqlProgress] = useState('');
+  const [pdfPath, setPdfPath] = useState(initialPdfPath || '');
+  const [pdfQAndA, setPdfQAndA] = useState<Array<{question: string, answer: string}>>([]);
+  const [pdfProgress, setPdfProgress] = useState('');
+  const [currentAgentId, setCurrentAgentId] = useState<string>('');
   const [evaluationProgress, setEvaluationProgress] = useState(0);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
@@ -185,6 +194,13 @@ export const App: React.FC<AppProps> = ({
               console.error('PostgreSQL connection string required for PostgreSQL source');
               process.exit(1);
             }
+          } else if (knowledgeSource === 'pdf') {
+            if (pdfPath) {
+              setStep('uploading-pdf');
+            } else {
+              console.error('PDF path required for PDF source');
+              process.exit(1);
+            }
           } else {
             setStep('running-evaluation');
           }
@@ -277,6 +293,47 @@ export const App: React.FC<AppProps> = ({
   }, [step, postgresqlConnectionString, backendUrl]);
 
   useEffect(() => {
+    if (step === 'uploading-pdf') {
+      (async () => {
+        try {
+          const startTime = Date.now();
+          
+          setPdfProgress('Generating API key...');
+          await api.generateApiKey('CLI Evaluation');
+          
+          setPdfProgress('Creating agent...');
+          const agent = await api.createAgent(agentEndpoint);
+          const agentId = agent.id;
+          setCurrentAgentId(agentId);
+          
+          setPdfProgress('Uploading PDF file...');
+          const { uploadPdfToAgent } = await import('./api/knowledge.js');
+          const { qaPairs } = await uploadPdfToAgent(
+            agentId,
+            pdfPath,
+            (message) => setPdfProgress(message)
+          );
+          
+          setPdfQAndA(qaPairs);
+          setStep('running-evaluation');
+        } catch (error: any) {
+          logger.error('Error uploading PDF:', error);
+          const errorMessage = error instanceof BaseError ? error.userMessage : error.message;
+          setEvaluationResult({
+            totalTests: 0,
+            passed: 0,
+            failed: 0,
+            duration: 'Failed',
+            evaluationUrl: dashboardUrl || 'https://eval.rippletide.com',
+            error: errorMessage,
+          });
+          setStep('complete');
+        }
+      })();
+    }
+  }, [step, pdfPath, agentEndpoint, dashboardUrl]);
+
+  useEffect(() => {
     if (step === 'running-evaluation') {
       (async () => {
         try {
@@ -287,8 +344,14 @@ export const App: React.FC<AppProps> = ({
           await api.generateApiKey('CLI Evaluation');
           
           setEvaluationProgress(10);
-          const agent = await api.createAgent(agentEndpoint);
-          const agentId = agent.id;
+          let agentId = currentAgentId;
+          if (!agentId) {
+            // Ensure we have a body template for the evaluation
+            const effectiveBodyTemplate = customConfig.bodyTemplate || '{"message": "[eval-question]"}';
+            const agent = await api.createAgent(agentEndpoint, effectiveBodyTemplate);
+            agentId = agent.id;
+            setCurrentAgentId(agentId);
+          }
           
           setEvaluationProgress(30);
           
@@ -343,11 +406,21 @@ export const App: React.FC<AppProps> = ({
               question: item.question,
               answer: item.answer
             }));
+          } else if (knowledgeSource === 'pdf' && pdfQAndA.length > 0) {
+            testPrompts = pdfQAndA.slice(0, 5).map((item) => ({
+              question: item.question,
+              answer: item.answer
+            }));
           }
           
           const createdPrompts = await api.addTestPrompts(agentId, testPrompts);
           
           setEvaluationProgress(50);
+          // Ensure customConfig has the body template for evaluation
+          const evalConfig = {
+            ...customConfig,
+            bodyTemplate: customConfig.bodyTemplate || '{"message": "[eval-question]"}'
+          };
           const evaluationResults = await api.runAllPromptEvaluations(
             agentId,
             createdPrompts,
@@ -365,7 +438,7 @@ export const App: React.FC<AppProps> = ({
                 setEvaluationLogs([...logs]);
               }
             },
-            customConfig
+            evalConfig
           );
           
           setEvaluationProgress(100);
@@ -412,7 +485,7 @@ export const App: React.FC<AppProps> = ({
         }
       })();
     }
-  }, [step, agentEndpoint, knowledgeSource, pineconeQAndA, postgresqlQAndA]);
+  }, [step, agentEndpoint, knowledgeSource, pineconeQAndA, postgresqlQAndA, pdfQAndA, currentAgentId]);
 
   const handleAgentEndpointSubmit = (value: string) => {
     const trimmedValue = value.trim();
@@ -429,6 +502,8 @@ export const App: React.FC<AppProps> = ({
       setStep('pinecone-url');
     } else if (value === 'postgresql') {
       setStep('postgresql-config');
+    } else if (value === 'pdf') {
+      setStep('pdf-path-input');
     } else {
       setStep('running-evaluation');
     }
@@ -447,6 +522,11 @@ export const App: React.FC<AppProps> = ({
   const handlePostgresqlConnectionSubmit = (value: string) => {
     setPostgresqlConnectionString(value);
     setStep('fetching-postgresql');
+  };
+
+  const handlePdfPathSubmit = (value: string) => {
+    setPdfPath(value);
+    setStep('uploading-pdf');
   };
 
   return (
@@ -727,6 +807,33 @@ export const App: React.FC<AppProps> = ({
       {step === 'fetching-postgresql' && (
         <Box flexDirection="column">
           <Spinner label={postgresqlProgress || "Analyzing PostgreSQL database..."} />
+        </Box>
+      )}
+
+      {step === 'pdf-path-input' && (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <Text color="#eba1b5">Enter the path to your PDF file</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>Examples:</Text>
+            <Box paddingLeft={2} flexDirection="column">
+              <Text dimColor>- ./docs/manual.pdf</Text>
+              <Text dimColor>- /home/user/documents/guide.pdf</Text>
+              <Text dimColor>- ../knowledge/faq.pdf</Text>
+            </Box>
+          </Box>
+          <TextInput
+            label="PDF path"
+            placeholder="./document.pdf"
+            onSubmit={handlePdfPathSubmit}
+          />
+        </Box>
+      )}
+
+      {step === 'uploading-pdf' && (
+        <Box flexDirection="column">
+          <Spinner label={pdfProgress || "Uploading PDF file..."} />
         </Box>
       )}
 

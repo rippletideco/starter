@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+import FormData from 'form-data';
 import { logger } from '../utils/logger.js';
+import { PdfUploadError, PdfValidationError } from '../errors/types.js';
 
 let client = axios.create({
   baseURL: 'https://rippletide-backend.azurewebsites.net',
@@ -70,6 +72,12 @@ export async function getTestResults(agentId: string) {
 export interface EvaluationConfig {
   agentEndpoint: string;
   knowledgeSource?: string;
+  customConfig?: {
+    headers?: Record<string, string>;
+    bodyTemplate?: string;
+    responseField?: string;
+    method?: string;
+  };
 }
 
 export interface EvaluationResult {
@@ -79,6 +87,101 @@ export interface EvaluationResult {
   duration: string;
   evaluationUrl: string;
   agentId?: string;
+}
+
+export async function uploadPdfToAgent(
+  agentId: string,
+  pdfPath: string,
+  onProgress?: (message: string) => void
+): Promise<{ qaPairs: Array<{question: string, answer: string}> }> {
+  try {
+    if (!fs.existsSync(pdfPath)) {
+      throw new PdfValidationError(pdfPath, 'not_found');
+    }
+
+    const stats = fs.statSync(pdfPath);
+    const MAX_SIZE = 10 * 1024 * 1024;
+    
+    if (stats.size > MAX_SIZE) {
+      throw new PdfValidationError(pdfPath, 'too_large', { 
+        fileSize: stats.size, 
+        maxSize: MAX_SIZE 
+      });
+    }
+
+    const fileName = path.basename(pdfPath);
+    const fileBuffer = fs.readFileSync(pdfPath);
+    const fileSizeKB = Math.round(fileBuffer.length / 1024);
+    
+    if (onProgress) {
+      onProgress(`Uploading ${fileName} (${fileSizeKB}KB) - this may take a few minutes...`);
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileBuffer, {
+      filename: fileName,
+      contentType: 'application/pdf'
+    });
+
+    const response = await client.post(
+      `/api/agents/${agentId}/upload-pdf`,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        timeout: 300000 // 5 minutes timeout for PDF processing
+      }
+    );
+
+    if (!response.data.success) {
+      throw new PdfUploadError(
+        'upload',
+        response.data.message || 'Upload failed',
+        pdfPath
+      );
+    }
+
+    if (onProgress) {
+      onProgress('Processing PDF and generating Q&A pairs...');
+    }
+
+    const qaPairs = response.data.processed?.qaPairs || [];
+    
+    if (qaPairs.length === 0) {
+      throw new PdfUploadError(
+        'extract',
+        'No Q&A pairs generated from PDF',
+        pdfPath
+      );
+    }
+
+    if (onProgress) {
+      onProgress(`Generated ${qaPairs.length} Q&A pairs`);
+    }
+
+    return {
+      qaPairs: qaPairs.map((pair: any) => ({
+        question: pair.question,
+        answer: pair.answer
+      }))
+    };
+  } catch (error: any) {
+    if (error instanceof PdfValidationError || error instanceof PdfUploadError) {
+      throw error;
+    }
+    
+    logger.error('Error uploading PDF:', error);
+    throw new PdfUploadError(
+      'upload',
+      error.message || 'Unknown error',
+      pdfPath,
+      error
+    );
+  }
 }
 
 export async function runEvaluation(
@@ -96,7 +199,8 @@ export async function runEvaluation(
     const startTime = Date.now();
     
     if (onProgress) onProgress(10);
-    const agent = await createAgent(config.agentEndpoint);
+    const payloadTemplate = config.customConfig?.bodyTemplate || '{"message": "[eval-question]"}';
+    const agent = await createAgent(config.agentEndpoint, payloadTemplate);
     const agentId = agent.id;
     
     if (onProgress) onProgress(30);

@@ -62,6 +62,9 @@ export async function generateApiKey(name?: string) {
     logger.info('API key generated successfully');
     logger.debug('API Key:', API_KEY?.substring(0, 12) + '...');
     
+    const { setApiClient } = await import('./knowledge.js');
+    setApiClient(client, API_KEY);
+    
     return response.data;
   } catch (error) {
     logger.error('Error generating API key:', error);
@@ -69,7 +72,7 @@ export async function generateApiKey(name?: string) {
   }
 }
 
-export async function createAgent(publicUrl: string) {
+export async function createAgent(publicUrl: string, customPayloadTemplate?: string) {
   try {
     const response = await client.post('/api/agents', {
       name: `Agent Eval ${Date.now()}`,
@@ -78,6 +81,25 @@ export async function createAgent(publicUrl: string) {
       publicUrl: publicUrl,
       label: 'eval',
     });
+    
+    const agentId = response.data.id;
+    
+    const payloadTemplate = customPayloadTemplate || '{"message": "[eval-question]"}';
+    
+    logger.debug(`Configuring advanced payload for agent ${agentId}`);
+    logger.debug(`Payload template: ${payloadTemplate}`);
+    
+    try {
+      await client.patch(`/api/agents/${agentId}`, {
+        advancedPayload: {
+          payload: payloadTemplate
+        }
+      });
+      logger.debug('Advanced payload configured successfully');
+    } catch (patchError: any) {
+      logger.warn('Could not set advanced payload:', patchError?.message);
+      logger.debug('Will use default payload format');
+    }
     
     return response.data;
   } catch (error) {

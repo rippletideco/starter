@@ -63,6 +63,9 @@ const parseArgs = () => {
     } else if ((args[i] === '--knowledge' || args[i] === '-k') && args[i + 1]) {
       options.knowledgeSource = args[i + 1];
       i++;
+    } else if ((args[i] === '--pdf-path' || args[i] === '-pp') && args[i + 1]) {
+      options.pdfPath = args[i + 1];
+      i++;
     } else if ((args[i] === '--pinecone-url' || args[i] === '-pu') && args[i + 1]) {
       options.pineconeUrl = args[i + 1];
       i++;
@@ -106,7 +109,7 @@ Commands:
 Options:
   -t, --template <name>       Use a pre-configured template
   -a, --agent <url>           Agent endpoint URL (e.g., localhost:8000)
-  -k, --knowledge <source>    Knowledge source: files, pinecone, or postgresql (default: files)
+  -k, --knowledge <source>    Knowledge source: files, pinecone, postgresql, or pdf (default: files)
   -b, --backend-url <url>     Backend API URL (default: https://rippletide-backend.azurewebsites.net)
   -d, --dashboard-url <url>   Dashboard URL (default: https://eval.rippletide.com)
   
@@ -116,6 +119,9 @@ Options:
   
   PostgreSQL options:
   -pg, --postgresql <conn>    PostgreSQL connection string or comma-separated values
+  
+  PDF options:
+  -pp, --pdf-path <path>      Path to PDF file for knowledge extraction
   
   Custom endpoint options:
   -H, --headers <headers>     Custom headers (e.g., "Authorization: Bearer token, X-API-Key: key")
@@ -144,6 +150,9 @@ Examples:
   
   # Direct evaluation with PostgreSQL
   rippletide eval -a localhost:8000 -k postgresql -pg "postgresql://user:pass@localhost:5432/db"
+  
+  # Direct evaluation with PDF
+  rippletide eval -a localhost:8000 -k pdf -pp ./docs/manual.pdf
   
   # With custom headers and body
   rippletide eval -a localhost:8000 -H "Authorization: Bearer token" -B '{"prompt": "{question}"}'
@@ -181,6 +190,7 @@ async function run() {
         customBodyTemplate={options.bodyTemplate}
         customResponseField={options.responseField}
         templatePath={options.templatePath}
+        pdfPath={options.pdfPath}
       />
     );
     

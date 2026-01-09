@@ -13,6 +13,8 @@ export enum ErrorCode {
   DATABASE_ERROR = 'DATABASE_ERROR',
   PINECONE_ERROR = 'PINECONE_ERROR',
   POSTGRESQL_ERROR = 'POSTGRESQL_ERROR',
+  PDF_UPLOAD_ERROR = 'PDF_UPLOAD_ERROR',
+  PDF_VALIDATION_ERROR = 'PDF_VALIDATION_ERROR',
   EVALUATION_ERROR = 'EVALUATION_ERROR',
   UNKNOWN_ERROR = 'UNKNOWN_ERROR'
 }
@@ -159,6 +161,52 @@ export class DatabaseError extends BaseError {
       `Failed to ${operation} with ${dbName}. Please check your connection details and try again.`,
       true,
       { dbType, operation, originalError }
+    );
+  }
+}
+
+export class PdfUploadError extends BaseError {
+  constructor(
+    operation: 'upload' | 'process' | 'extract',
+    reason: string,
+    filePath?: string,
+    originalError?: any
+  ) {
+    const userMessages = {
+      upload: `Failed to upload PDF: ${reason}`,
+      process: `Failed to process PDF: ${reason}`,
+      extract: `Failed to extract Q&A from PDF: ${reason}`
+    };
+
+    super(
+      ErrorCode.PDF_UPLOAD_ERROR,
+      `PDF ${operation} error: ${reason}`,
+      userMessages[operation],
+      operation === 'upload',
+      { filePath, operation, originalError }
+    );
+  }
+}
+
+export class PdfValidationError extends BaseError {
+  constructor(
+    filePath: string,
+    reason: 'not_found' | 'too_large' | 'invalid_format' | 'no_permission',
+    details?: any
+  ) {
+    const userMessages = {
+      not_found: `PDF file not found: ${filePath}`,
+      too_large: `PDF file is too large (max 10MB): ${filePath}`,
+      invalid_format: `File is not a valid PDF: ${filePath}`,
+      no_permission: `No permission to read PDF file: ${filePath}`
+    };
+
+    super(
+      ErrorCode.PDF_VALIDATION_ERROR,
+      `PDF validation error: ${reason} - ${filePath}`,
+      userMessages[reason],
+      false,
+      { filePath, reason, ...details }
     );
   }
 }

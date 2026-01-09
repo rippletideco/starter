@@ -35,6 +35,10 @@ export function normalizeEndpoint(endpoint: string): string {
 export function generatePayloadVariants(question: string): any[] {
   const variants = [];
   
+  variants.push({ 
+    messages: [{ role: 'user', content: question }]
+  });
+  
   variants.push({ message: question });
   
   variants.push({ inputs: question });
@@ -53,10 +57,6 @@ export function generatePayloadVariants(question: string): any[] {
   variants.push({ text: question });
   variants.push({ user_message: question });
   
-  variants.push({ 
-    messages: [{ role: 'user', content: question }]
-  });
-  
   variants.push({ data: question });
   variants.push({ content: question });
   
@@ -67,10 +67,16 @@ export function generatePayloadVariants(question: string): any[] {
 
 export function buildCustomPayload(template: string, question: string): any {
   try {
-    const replaced = template.replace(/{question}/g, question);
+    let replaced = template
+      .replace(/\[eval-question\]/g, question)
+      .replace(/\{\{question\}\}/g, question)
+      .replace(/\{question\}/g, question);
     return JSON.parse(replaced);
   } catch (e) {
-    return template.replace(/{question}/g, question);
+    return template
+      .replace(/\[eval-question\]/g, question)
+      .replace(/\{\{question\}\}/g, question)
+      .replace(/\{question\}/g, question);
   }
 }
 
