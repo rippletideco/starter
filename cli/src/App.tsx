@@ -368,6 +368,44 @@ export const App: React.FC<AppProps> = ({
           
           setEvaluationProgress(30);
           
+          if (knowledgeSource === 'files') {
+            let knowledgeData: any = null;
+            if (templatePath) {
+              try {
+                const fs = await import('fs');
+                const path = await import('path');
+                const qandaPath = path.join(templatePath, 'qanda.json');
+                if (fs.existsSync(qandaPath)) {
+                  knowledgeData = JSON.parse(fs.readFileSync(qandaPath, 'utf-8'));
+                }
+              } catch (error) {
+                logger.debug('Error loading knowledge from template:', error);
+              }
+            } else {
+              const knowledgeResult = await api.checkKnowledge();
+              if (knowledgeResult.found && knowledgeResult.path) {
+                try {
+                  const fs = await import('fs');
+                  knowledgeData = JSON.parse(fs.readFileSync(knowledgeResult.path, 'utf-8'));
+                } catch (error) {
+                  logger.debug('Error loading knowledge:', error);
+                }
+              }
+            }
+            
+            if (knowledgeData) {
+              setEvaluationProgress(35);
+              try {
+                const importResult = await api.importKnowledge(agentId, knowledgeData);
+                logger.debug('Knowledge import result:', importResult);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              } catch (error: any) {
+                logger.error('Failed to import knowledge:', error?.message || error);
+                logger.debug('Import error details:', error?.response?.data);
+              }
+            }
+          }
+          
           setEvaluationProgress(40);
           let testPrompts: Array<{question: string, answer?: string}> | string[] = [];
           if (knowledgeSource === 'files') {

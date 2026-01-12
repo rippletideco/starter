@@ -48,14 +48,49 @@ export async function checkKnowledge(folderPath: string = '.') {
 
 export async function importKnowledge(agentId: string, knowledgeData: any) {
   try {
-    const response = await client.post(`/api/agents/${agentId}/knowledge/import`, {
-      data: knowledgeData,
-    });
+    logger.debug('Importing knowledge for agent:', agentId);
+    logger.debug('Knowledge data type:', Array.isArray(knowledgeData) ? 'array' : typeof knowledgeData);
+    logger.debug('Knowledge data length:', Array.isArray(knowledgeData) ? knowledgeData.length : 'N/A');
     
-    return response.data;
-  } catch (error) {
-    logger.error('Error importing knowledge:', error);
-    return null;
+    if (!Array.isArray(knowledgeData)) {
+      logger.warn('Knowledge data is not an array, skipping import');
+      return null;
+    }
+    
+    let importedCount = 0;
+    for (const item of knowledgeData) {
+      try {
+        const question = item.question || item.prompt || item.input;
+        const answer = item.answer || item.response || item.expectedAnswer;
+        
+        if (!question || !answer) {
+          logger.debug('Skipping item without question or answer:', item);
+          continue;
+        }
+        
+        const response = await client.post(`/api/agents/${agentId}/config`, {
+          label: question,
+          description: answer,
+          type: 'knowledge'
+        });
+        
+        importedCount++;
+        logger.debug(`Imported Q&A ${importedCount}/${knowledgeData.length}: ${question.substring(0, 50)}...`);
+      } catch (error: any) {
+        logger.warn(`Failed to import Q&A pair: ${error?.message || error}`);
+        logger.debug('Q&A import error details:', error?.response?.data);
+        logger.debug('Q&A import error status:', error?.response?.status);
+      }
+    }
+    
+    logger.info(`Knowledge imported successfully: ${importedCount}/${knowledgeData.length} Q&A pairs`);
+    
+    return { imported: importedCount, total: knowledgeData.length };
+  } catch (error: any) {
+    logger.error('Error importing knowledge:', error?.message || error);
+    logger.debug('Error details:', error?.response?.data);
+    logger.debug('Error status:', error?.response?.status);
+    throw error;
   }
 }
 
