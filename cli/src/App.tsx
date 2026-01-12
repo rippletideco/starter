@@ -10,8 +10,8 @@ import { api, type CustomEndpointConfig } from './api/client.js';
 import { getPineconeQAndA } from './utils/pinecone.js';
 import { getPostgreSQLQAndA, parsePostgreSQLConnectionString, type PostgreSQLConfig } from './utils/postgresql.js';
 import { BaseError, ValidationError } from './errors/types.js';
-import { createErrorComponent } from './errors/handler.js';
 import { logger } from './utils/logger.js';
+import { analytics } from './utils/analytics.js';
 
 type Step = 
   | 'agent-endpoint' 
@@ -224,6 +224,10 @@ export const App: React.FC<AppProps> = ({
             (message) => setPineconeProgress(message)
           );
           setPineconeQAndA(qaPairs);
+          analytics.track('evaluation_started', {
+            knowledge_source: 'pinecone',
+            qa_pairs_count: qaPairs.length,
+          });
           setStep('running-evaluation');
         } catch (error: any) {
           logger.error('Error fetching Q&A from Pinecone:', error);
@@ -274,6 +278,10 @@ export const App: React.FC<AppProps> = ({
             (message) => setPostgresqlProgress(message)
           );
           setPostgresqlQAndA(qaPairs);
+          analytics.track('evaluation_started', {
+            knowledge_source: 'postgresql',
+            qa_pairs_count: qaPairs.length,
+          });
           setStep('running-evaluation');
         } catch (error: any) {
           logger.error('Error fetching Q&A from PostgreSQL:', error);
@@ -315,6 +323,11 @@ export const App: React.FC<AppProps> = ({
           );
           
           setPdfQAndA(qaPairs);
+          analytics.track('evaluation_started', {
+            knowledge_source: 'pdf',
+            pdf_path: pdfPath,
+            qa_pairs_count: qaPairs.length,
+          });
           setStep('running-evaluation');
         } catch (error: any) {
           logger.error('Error uploading PDF:', error);
@@ -416,7 +429,6 @@ export const App: React.FC<AppProps> = ({
           const createdPrompts = await api.addTestPrompts(agentId, testPrompts);
           
           setEvaluationProgress(50);
-          // Ensure customConfig has the body template for evaluation
           const evalConfig = {
             ...customConfig,
             bodyTemplate: customConfig.bodyTemplate || '{"message": "[eval-question]"}'
@@ -467,6 +479,15 @@ export const App: React.FC<AppProps> = ({
             evaluationUrl: `${dashboardUrl || 'https://eval.rippletide.com'}/eval/${agentId}`,
             agentId,
           };
+          
+          analytics.track('evaluation_completed', {
+            total_tests: createdPrompts.length,
+            passed_tests: passed,
+            failed_tests: failed,
+            duration_ms: Date.now() - startTime,
+            knowledge_source: knowledgeSource,
+            success_rate: createdPrompts.length > 0 ? (passed / createdPrompts.length) * 100 : 0,
+          });
           
           setEvaluationResult(result);
           setStep('complete');

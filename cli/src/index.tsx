@@ -5,6 +5,7 @@ import { App } from './App.js';
 import { ErrorHandler } from './errors/handler.js';
 import { ValidationError } from './errors/types.js';
 import { listTemplates, loadTemplate, getTemplateOptions } from './utils/templates.js';
+import { analytics } from './utils/analytics.js';
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
@@ -93,6 +94,9 @@ const parseArgs = () => {
       i++;
     } else if (args[i] === '--debug') {
       options.debug = true;
+    } else if (args[i] === '--no-analytics') {
+      options.noAnalytics = true;
+      analytics.setAnalyticsEnabled(false);
     } else if (args[i] === '--help' || args[i] === '-h') {
       console.log(`
 Rippletide CLI
@@ -130,6 +134,7 @@ Options:
   
   Other options:
   --debug                     Show detailed error information
+  --no-analytics              Disable usage analytics
   -h, --help                  Show this help message
 
 Examples:
@@ -174,6 +179,29 @@ async function run() {
   try {
     const options = parseArgs();
     
+    const fs = await import('fs');
+    const path = await import('path');
+    const os = await import('os');
+    const configPath = path.join(os.homedir(), '.rippletide', 'config.json');
+    const isNewUser = !fs.existsSync(configPath);
+    
+    analytics.track('cli_started', {
+      command: process.argv[2] || 'eval',
+      has_template: !!options.templatePath,
+      knowledge_source: options.knowledgeSource || 'files',
+      is_non_interactive: options.nonInteractive,
+      is_new_user: isNewUser,
+    });
+    
+    if (isNewUser) {
+      analytics.track('new_user_activated', {
+        source: process.argv[2] || 'eval',
+        activation_date: new Date().toISOString(),
+      });
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     process.stdout.write('\x1Bc');
     
     const { waitUntilExit } = render(
@@ -195,7 +223,16 @@ async function run() {
     );
     
     await waitUntilExit();
+    
+    await analytics.shutdown();
+    await new Promise(resolve => setTimeout(resolve, 500));
   } catch (error) {
+    analytics.track('cli_error', {
+      error_type: error instanceof Error ? error.constructor.name : 'Unknown',
+      error_message: error instanceof Error ? error.message : String(error),
+    });
+    await analytics.shutdown();
+    await new Promise(resolve => setTimeout(resolve, 500));
     ErrorHandler.handle(error);
     process.exit(1);
   }
