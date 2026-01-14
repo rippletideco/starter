@@ -7,14 +7,14 @@ import { ValidationError } from './errors/types.js';
 import { listTemplates, loadTemplate, getTemplateOptions } from './utils/templates.js';
 import { analytics } from './utils/analytics.js';
 
-const parseArgs = () => {
+const parseArgs = async () => {
   const args = process.argv.slice(2);
   
   if (args[0] === 'list-templates' || args[0] === 'templates') {
-    const templates = listTemplates();
+    const templates = await listTemplates();
     console.log('\nAvailable Templates:\n');
     if (templates.length === 0) {
-      console.log('No templates found in ./templates directory');
+      console.log('No templates found');
     } else {
       templates.forEach(template => {
         console.log(`  ${template.name}`);
@@ -40,15 +40,15 @@ const parseArgs = () => {
 
   for (let i = 0; i < args.length; i++) {
     if ((args[i] === '--template' || args[i] === '-t') && args[i + 1]) {
-      const template = loadTemplate(args[i + 1]);
+      const template = await loadTemplate(args[i + 1]);
       if (!template) {
         console.error(`Template '${args[i + 1]}' not found.`);
         console.log('\nAvailable templates:');
-        const templates = listTemplates();
+        const templates = await listTemplates();
         templates.forEach(t => console.log(`  - ${t.name}`));
         process.exit(1);
       }
-      const templateOptions = getTemplateOptions(template);
+      const templateOptions = await getTemplateOptions(template);
       Object.assign(options, templateOptions);
       i++;
     } else if ((args[i] === '--backend-url' || args[i] === '-b') && args[i + 1]) {
@@ -177,7 +177,7 @@ Examples:
 
 async function run() {
   try {
-    const options = parseArgs();
+    const options = await parseArgs();
     
     const fs = await import('fs');
     const path = await import('path');
@@ -218,6 +218,7 @@ async function run() {
         customBodyTemplate={options.bodyTemplate}
         customResponseField={options.responseField}
         templatePath={options.templatePath}
+        isRemoteTemplate={options.isRemoteTemplate}
         pdfPath={options.pdfPath}
       />
     );

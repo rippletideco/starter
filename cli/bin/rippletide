@@ -13,12 +13,6 @@ async function loadErrorHandler() {
 }
 
 async function main() {
-  if (!cmd || cmd === 'eval') {
-    process.argv = ['node', 'dist/index.js', ...args.slice(cmd === 'eval' ? 1 : 0)];
-    await import('../dist/index.js');
-    return;
-  }
-
   if (cmd === 'list-templates' || cmd === 'templates') {
     process.argv = ['node', 'dist/index.js', ...args];
     await import('../dist/index.js');
@@ -26,29 +20,13 @@ async function main() {
   }
 
   if (cmd === '--help' || cmd === '-h') {
-    console.log(`
-Rippletide CLI
-
-Usage:
-  rippletide eval [options]        Run the Rippletide evaluation UI
-
-Options:
-  -b, --backend-url <url>     Backend API URL (default: https://rippletide-backend.azurewebsites.net)
-  -d, --dashboard-url <url>   Dashboard URL (default: https://eval.rippletide.com)
-  --debug                      Show detailed error information and stack traces
-  -h, --help                  Show this help message
-
-Examples:
-  rippletide eval
-  rippletide eval -b http://localhost:3001 -d http://localhost:5173
-  rippletide eval --debug
-`);
+    process.argv = ['node', 'dist/index.js', '--help'];
+    await import('../dist/index.js');
     return;
   }
 
-  console.error(`Unknown command: ${cmd}`);
-  console.log(`Run "rippletide --help" for usage.`);
-  process.exit(1);
+  process.argv = ['node', 'dist/index.js', ...args.slice(cmd === 'eval' ? 1 : 0)];
+  await import('../dist/index.js');
 }
 
 main().catch(async (err) => {

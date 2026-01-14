@@ -58,6 +58,7 @@ interface AppProps {
   customBodyTemplate?: string;
   customResponseField?: string;
   templatePath?: string;
+  isRemoteTemplate?: boolean;
 }
 
 export const App: React.FC<AppProps> = ({ 
@@ -73,7 +74,8 @@ export const App: React.FC<AppProps> = ({
   customHeaders,
   customBodyTemplate,
   customResponseField,
-  templatePath
+  templatePath,
+  isRemoteTemplate
 }) => {
   const { exit } = useApp();
   const initialStep = nonInteractive && initialAgentEndpoint ? 'testing-connection' : 'agent-endpoint';
@@ -372,11 +374,18 @@ export const App: React.FC<AppProps> = ({
             let knowledgeData: any = null;
             if (templatePath) {
               try {
-                const fs = await import('fs');
-                const path = await import('path');
-                const qandaPath = path.join(templatePath, 'qanda.json');
-                if (fs.existsSync(qandaPath)) {
-                  knowledgeData = JSON.parse(fs.readFileSync(qandaPath, 'utf-8'));
+                if (isRemoteTemplate) {
+                  const axios = await import('axios');
+                  const qandaUrl = `${templatePath}/qanda.json`;
+                  const response = await axios.default.get(qandaUrl, { timeout: 5000 });
+                  knowledgeData = response.data;
+                } else {
+                  const fs = await import('fs');
+                  const path = await import('path');
+                  const qandaPath = path.join(templatePath, 'qanda.json');
+                  if (fs.existsSync(qandaPath)) {
+                    knowledgeData = JSON.parse(fs.readFileSync(qandaPath, 'utf-8'));
+                  }
                 }
               } catch (error) {
                 logger.debug('Error loading knowledge from template:', error);
@@ -411,19 +420,28 @@ export const App: React.FC<AppProps> = ({
           if (knowledgeSource === 'files') {
             if (templatePath) {
               try {
-                const fs = await import('fs');
-                const path = await import('path');
-                const qandaPath = path.join(templatePath, 'qanda.json');
-                if (fs.existsSync(qandaPath)) {
-                  const knowledgeData = JSON.parse(fs.readFileSync(qandaPath, 'utf-8'));
-                  if (Array.isArray(knowledgeData)) {
-                    testPrompts = knowledgeData.map((item: any) => ({
-                      question: item.question || item.prompt || item.input || 'Test question',
-                      answer: item.answer || item.response || item.expectedAnswer
-                    }));
-                  }
+                let knowledgeData: any = null;
+                if (isRemoteTemplate) {
+                  const axios = await import('axios');
+                  const qandaUrl = `${templatePath}/qanda.json`;
+                  const response = await axios.default.get(qandaUrl, { timeout: 5000 });
+                  knowledgeData = response.data;
                 } else {
-                  logger.debug('No qanda.json found in template directory:', templatePath);
+                  const fs = await import('fs');
+                  const path = await import('path');
+                  const qandaPath = path.join(templatePath, 'qanda.json');
+                  if (fs.existsSync(qandaPath)) {
+                    knowledgeData = JSON.parse(fs.readFileSync(qandaPath, 'utf-8'));
+                  } else {
+                    logger.debug('No qanda.json found in template directory:', templatePath);
+                  }
+                }
+                
+                if (knowledgeData && Array.isArray(knowledgeData)) {
+                  testPrompts = knowledgeData.map((item: any) => ({
+                    question: item.question || item.prompt || item.input || 'Test question',
+                    answer: item.answer || item.response || item.expectedAnswer
+                  }));
                 }
               } catch (error) {
                 logger.debug('Error loading prompts from template:', error);
